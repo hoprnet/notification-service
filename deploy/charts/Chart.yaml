@@ -1,0 +1,23 @@
+annotations:
+  category: Hopr
+apiVersion: v2
+appVersion: v1.0
+dependencies:
+  - name: common
+    repository: https://charts.bitnami.com/bitnami
+    tags:
+      - bitnami-common
+    version: 2.x.x
+description: Notification service allows to forward messages from notification services like AlertManager to target systems like Element, Email
+home: https://github.com/hoprnet/notification-service
+# icon: Url to an icon of the Chart
+keywords:
+  - element
+  - alertmanager
+  - notification
+kubeVersion: '>=1.24.0-0'
+maintainers:
+  - name: Hopr Association
+    url: https://hoprnet.org/
+name: notification-service
+version: v1.0

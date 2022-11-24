@@ -1,0 +1,13 @@
+.dockerignore
+node_modules
+lib
+Dockerfile
+.git
+.gitignore
+test
+nodemon.json
+.env
+.vscode
+.npmrc
+*.map
+*.ts
