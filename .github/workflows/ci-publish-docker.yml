@@ -25,10 +25,12 @@ jobs:
         with:
           project_id: ${{ secrets.GOOGLE_HOPRASSOCIATION_PROJECT }}
           install_components: beta
+      - name: Google Container authentication
+        run: gcloud auth configure-docker
       - name: Get package version
         run: |
           docker_tag=$(jq -r '.version' package.json)
-          echo "DOCKER_TAG=${docker_tag}" >> $GITHUB_ENV
+          echo "DOCKER_TAG=${docker_tag}" >> $GITHUB_ENV          
       - name: Build docker image
         uses: docker/build-push-action@v3
         with:
