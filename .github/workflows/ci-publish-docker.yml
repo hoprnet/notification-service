@@ -26,7 +26,7 @@ jobs:
           project_id: ${{ secrets.GOOGLE_HOPRASSOCIATION_PROJECT }}
           install_components: beta
       - name: Google Container authentication
-        run: gcloud auth configure-docker
+        run: gcloud auth configure-docker --quiet gcr.io
       - name: Get package version
         run: |
           docker_tag=$(jq -r '.version' package.json)
