@@ -3,8 +3,8 @@ on:
   pull_request_target:
     branches:
       - master
-    paths:
-      - "deploy/charts/**"
+    # paths:
+    #   - "deploy/charts/**"
 jobs:
   build-docker:
     runs-on: ubuntu-latest
