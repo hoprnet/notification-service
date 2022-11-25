@@ -1,0 +1,30 @@
+name: 'Build Helm chart'
+on:
+  pull_request_target:
+    branches:
+      - master
+    paths:
+      - "deploy/charts"
+jobs:
+  build-docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout bitnami/charts
+        uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+          fetch-depth: 0
+      - name: Check Helm chart version already exists
+        run: |
+          helm_chart_version=$(grep '^version:' deploy/charts/Chart.yaml | sed 's/.*: //')
+          echo "Helm Chart Version: ${helm_chart_version}"
+          if git tag -l | grep 'helm-${helm_chart_version}' 1> /dev/null; then 
+            echo "The Helm chart version already exists. Please bump property 'version' on ./deploy/charts/Chart.yaml to a new version";
+            exit 1
+          fi
+      - name: Lint
+        run: |
+          helm dependency update
+          helm lint       

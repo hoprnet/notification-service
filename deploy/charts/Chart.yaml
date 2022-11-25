@@ -9,6 +9,7 @@ dependencies:
       - bitnami-common
     version: 2.x.x
 description: Notification service allows to forward messages from notification services like AlertManager to target systems like Element, Email
+icon: https://github.com/hoprnet/notification-service/raw/master/images/logo.svg
 home: https://github.com/hoprnet/notification-service
 # icon: Url to an icon of the Chart
 keywords:

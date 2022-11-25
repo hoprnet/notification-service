@@ -33,6 +33,7 @@ LABEL description="Hopr Notification Service"
 ENV NODE_ENV production
 ENV DEBUG 'notification-service*'
 ENV MATRIX_SERVER_HOST 'hoprnet.modular.im'
+ENV MATRIX_API_TOKEN '<got from Element user settings>'
 ENV PORT 8080
 EXPOSE ${PORT}
 

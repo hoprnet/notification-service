@@ -26,3 +26,7 @@ curl -H "Content-Type: application/json" -X POST --data "@test/alertmanager-noti
 1. Build image
 2. Publish image
 3. Deploy Helm chart
+
+## License
+
+GPL-3.0

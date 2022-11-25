@@ -36,7 +36,10 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
-      {{- .Values.image.pullSecrets . | nindent 6 }}
+      {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+      {{- .Values.image.pullSecrets | nindent 8 }}
+      {{- end }}            
       {{- if .Values.affinity }}
       affinity: {{- include "common.tplvalues.render" ( dict "value" .Values.affinity "context" $) | nindent 8 }}
       {{- else }}
@@ -68,7 +71,7 @@ spec:
       {{- end }}
       containers:
         - name: notification-service
-          image: {{ .Values.image }}
+          image: {{ .Values.image.repository }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- if .Values.containerSecurityContext.enabled }}
           securityContext: {{- omit .Values.containerSecurityContext "enabled" | toYaml | nindent 12 }}

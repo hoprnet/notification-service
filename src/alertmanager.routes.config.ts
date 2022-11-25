@@ -7,7 +7,7 @@ import { ElementNotificationService } from './element-notification.service';
 
 const moment = require('moment');
 const debugLog: debug.IDebugger = debug('notification-service:alertmanager-routes');
-const GITHUB_URL_IMAGE_BASE= "https://github.com/hoprnet/hopr-devops/raw/feature/75-alertmamanger/docs/alerts";
+const GITHUB_URL_IMAGE_BASE= "https://github.com/hoprnet/notification-service/raw/master/images";
 
 /**
  * Configure a route to handle AlertManager alerts and notify them via Element 
@@ -50,7 +50,7 @@ export class AlertManagerRoutes extends CommonRoutesConfig {
         let startedDate = (moment(alert.startsAt)).format('HH:mm:ss')
         tableRowLines.push('\t\t\t<tr>');
         tableRowLines.push(`\t\t\t\t<td><a href="${alert.annotations.runbook_url}" target="_blank">${alert.labels.alertname}</a></td>`);
-        tableRowLines.push(`\t\t\t\t<td><img src="${GITHUB_URL_IMAGE_BASE}/${alert.labels.severity}.png"/></td>`);
+        tableRowLines.push(`\t\t\t\t<td><img src="${GITHUB_URL_IMAGE_BASE}/${alert.labels.severity}.svg"/></td>`);
         tableRowLines.push(`\t\t\t\t<td>${startedDate}</td>`);
         tableRowLines.push(`\t\t\t\t<td>${alert.annotations.description}</td>`);
         tableRowLines.push('\t\t\t</tr>');        

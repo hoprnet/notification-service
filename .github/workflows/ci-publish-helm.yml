@@ -1,0 +1,27 @@
+name: 'Publish Helm chart'
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "deploy/charts/**/*"
+jobs:
+  build-docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout bitnami/charts
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Get Helm chart version
+        run: |
+          helm_chart_version=$(grep '^version:' deploy/charts/Chart.yaml | sed 's/.*: //')
+          echo "Helm Chart Version: ${helm_chart_version}"
+          echo "HELM_CHART_VERSION=${helm_chart_version}" >> $GITHUB_ENV
+      - name: Tag version
+        run: |
+            git config user.email "noreply@hoprnet.org"
+            git config user.name "HOPR CI robot"
+            git tag ${{ env.HELM_CHART_VERSION }}
+            git push origin ${{ env.HELM_CHART_VERSION }}
