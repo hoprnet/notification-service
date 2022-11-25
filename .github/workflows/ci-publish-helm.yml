@@ -1,4 +1,4 @@
-name: 'Publish Helm chart'
+name: 'Publish helm chart'
 on:
   push:
     branches:

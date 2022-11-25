@@ -4,7 +4,7 @@ on:
     branches:
       - master
     paths:
-      - "deploy/charts/**/*"
+      - "deploy/charts/**"
 jobs:
   build-docker:
     runs-on: ubuntu-latest

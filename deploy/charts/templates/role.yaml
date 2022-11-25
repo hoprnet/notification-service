@@ -18,7 +18,7 @@ rules:
       - {{ printf "%s-key" (include "common.names.fullname" .) }}
     resources:
       - secrets
-      - services
+#      - services
     verbs:
       - get
   - apiGroups:
