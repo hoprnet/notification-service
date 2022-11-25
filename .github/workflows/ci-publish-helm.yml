@@ -1,4 +1,4 @@
-name: 'Publish Helm chart'
+name: 'Publish helm chart'
 on:
   push:
     branches:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout bitnami/charts
+      - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0

@@ -1,10 +1,8 @@
-
 # arm64 (Apple M1): sha256:e23e298e8b394086b06666b47681ba453677993eba30735cebd860379abc3ec2
 # amd64 (Intel based): @sha256:2771803756cf54d0b8031fa5239420386608bcff9f69f9e8a7afda0671982537
 # NodeJs 18 https://hub.docker.com/layers/library/node/18/images/sha256-2771803756cf54d0b8031fa5239420386608bcff9f69f9e8a7afda0671982537?context=explore
-ARG NODEJS_18_SHA='@sha256:2771803756cf54d0b8031fa5239420386608bcff9f69f9e8a7afda0671982537'
-
-FROM node:18${NODEJS_18_SHA} as build
+ARG NODEJS_18_IMAGE=${NODEJS_18_IMAGE:-node:18@sha256:2771803756cf54d0b8031fa5239420386608bcff9f69f9e8a7afda0671982537}
+FROM ${NODEJS_18_IMAGE} as build
 
 # Create app directory
 WORKDIR /app/notification-service
@@ -26,8 +24,8 @@ find ./lib/ -name "*.ts" -exec rm '{}' \;
 # arm64 (Apple M1): sha256:a56bbaddffb19e03fa78d0b2c88cf70ec2f8d40e30048c757fb7c17fd1e12d8d
 # amd64 (Intel based): @sha256:67373bd5d90ea600cb5f0fa58d7a5a4e6ebf50b6e05c50c1d1cc22df5134db43
 # NodeJs Alpine 18 x86_64 https://hub.docker.com/layers/library/node/18-alpine/images/sha256-67373bd5d90ea600cb5f0fa58d7a5a4e6ebf50b6e05c50c1d1cc22df5134db43?context=explore
-ARG NODEJS_18_ALPINE_SHA='@sha256:67373bd5d90ea600cb5f0fa58d7a5a4e6ebf50b6e05c50c1d1cc22df5134db43'
-FROM node:18-alpine${NODEJS_18_ALPINE_SHA} as runtime
+ARG NODEJS_18_ALPINE_IMAGE=${NODEJS_18_ALPINE_IMAGE:-node:18-alpine@sha256:67373bd5d90ea600cb5f0fa58d7a5a4e6ebf50b6e05c50c1d1cc22df5134db43}
+FROM ${NODEJS_18_ALPINE_IMAGE} as runtime
 
 LABEL description="Hopr Notification Service"
 ENV NODE_ENV production

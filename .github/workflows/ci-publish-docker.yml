@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout bitnami/charts
+      - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
@@ -24,8 +24,8 @@ jobs:
           push: true
           tags: hoprassociation/notification-service:${{ env.DOCKER_TAG }}
           build-args: |
-            NODEJS_18_SHA='@sha256:2771803756cf54d0b8031fa5239420386608bcff9f69f9e8a7afda0671982537'
-            NODEJS_18_ALPINE_SHA='@sha256:67373bd5d90ea600cb5f0fa58d7a5a4e6ebf50b6e05c50c1d1cc22df5134db43'
+            NODEJS_18_IMAGE=node:18@sha256:2771803756cf54d0b8031fa5239420386608bcff9f69f9e8a7afda0671982537
+            NODEJS_18_ALPINE_IMAGE=node:18-alpine@sha256:67373bd5d90ea600cb5f0fa58d7a5a4e6ebf50b6e05c50c1d1cc22df5134db43
       - name: Tag version
         run: |
             git config user.email "noreply@hoprnet.org"

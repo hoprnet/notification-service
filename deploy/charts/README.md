@@ -55,7 +55,6 @@ Chart version `Chart.yaml` should be increased according to [semver](http://semv
 | `image.digest`                                      | Image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag                          | `""`                                   |
 | `image.pullPolicy`                                  | Image pull policy                                                                                                        | `IfNotPresent`                         |
 | `image.pullSecrets`                                 | Image pull secrets                                                                                                       | `[]`                                   |
-| `image.debug`                                       | Enable Image debug mode                                                                                                  | `false`                                |
 | `containerPorts.http`                               | Controller HTTP container port to open                                                                                   | `8080`                                 |
 | `resources.limits`                                  | The resources limits for the containers                                                                                  | `{}`                                   |
 | `resources.requests`                                | The requested resources for the containers                                                                               | `{}`                                   |
@@ -141,16 +140,16 @@ Chart version `Chart.yaml` should be increased according to [semver](http://semv
 
 ### Other Parameters
 
-| Name                                          | Description                                                      | Value  |
-| --------------------------------------------- | ---------------------------------------------------------------- | ------ |
-| `rbac.create`                                 | Specifies whether RBAC resources should be created               | `true` |
-| `rbac.unsealer.rules`                         | Custom RBAC rules to set for unsealer ClusterRole                | `[]`   |
-| `rbac.keyAdmin.rules`                         | Custom RBAC rules to set for key-admin role                      | `[]`   |
-| `rbac.serviceProxier.rules`                   | Custom RBAC rules to set for service-proxier role                | `[]`   |
-| `serviceAccount.create`                       | Specifies whether a ServiceAccount should be created             | `true` |
-| `serviceAccount.name`                         | The name of the ServiceAccount to use.                           | `""`   |
-| `serviceAccount.annotations`                  | Additional Service Account annotations (evaluated as a template) | `{}`   |
-| `serviceAccount.automountServiceAccountToken` | Automount service account token for the server service account   | `true` |
+| Name                                          | Description                                                      | Value                  |
+| --------------------------------------------- | ---------------------------------------------------------------- | ---------------------- |
+| `rbac.create`                                 | Specifies whether RBAC resources should be created               | `true`                 |
+| `rbac.unsealer.rules`                         | Custom RBAC rules to set for unsealer ClusterRole                | `[]`                   |
+| `rbac.keyAdmin.rules`                         | Custom RBAC rules to set for key-admin role                      | `[]`                   |
+| `rbac.serviceProxier.rules`                   | Custom RBAC rules to set for service-proxier role                | `[]`                   |
+| `serviceAccount.create`                       | Specifies whether a ServiceAccount should be created             | `true`                 |
+| `serviceAccount.name`                         | The name of the ServiceAccount to use.                           | `notification-service` |
+| `serviceAccount.annotations`                  | Additional Service Account annotations (evaluated as a template) | `{}`                   |
+| `serviceAccount.automountServiceAccountToken` | Automount service account token for the server service account   | `true`                 |
 
 
 ### Metrics parameters
@@ -168,3 +167,4 @@ Chart version `Chart.yaml` should be increased according to [semver](http://semv
 | `metrics.serviceMonitor.metricRelabelings` | Specify additional relabeling of metrics                                         | `[]`    |
 | `metrics.serviceMonitor.relabelings`       | Specify general relabeling                                                       | `[]`    |
 | `metrics.serviceMonitor.selector`          | Prometheus instance selector labels                                              | `{}`    |
+
