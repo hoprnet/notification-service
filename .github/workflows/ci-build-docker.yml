@@ -31,7 +31,6 @@ jobs:
           install_components: beta                    
       - name: Check if docker tag exists
         run: |
-          cat Dockerfile
           docker_tag=$(jq -r '.version' package.json)
           echo "Docker tag: ${docker_tag}"
           images=$(gcloud container images  list-tags  gcr.io/hoprassociation/network-service --filter="tags[]=${docker_tag}")
