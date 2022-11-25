@@ -12,8 +12,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       - name: Set up Google Cloud Credentials
         uses: google-github-actions/auth@v0
         with:
@@ -25,6 +23,7 @@ jobs:
           install_components: beta                    
       - name: Check if docker tag exists
         run: |
+          cat Dockerfile
           docker_tag=$(jq -r '.version' package.json)
           echo "Docker tag: ${docker_tag}"
           images=$(gcloud container images  list-tags  gcr.io/hoprassociation/network-service --filter="tags[]=${docker_tag}")
