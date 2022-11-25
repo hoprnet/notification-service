@@ -10,6 +10,9 @@ on:
       - reopened      
     paths:
       - "deploy/charts/**"
+defaults:
+  run:
+    working-directory: 'deploy/charts'
 jobs:
   build-docker:
     runs-on: ubuntu-latest
