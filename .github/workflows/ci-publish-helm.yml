@@ -1,8 +1,10 @@
 name: 'Publish helm chart'
 on:
-  push:
+  pull_request_target:
     branches:
       - master
+    types:
+      - closed
     paths:
       - "deploy/charts/**/*"
 jobs:
@@ -16,10 +18,10 @@ jobs:
           fetch-depth: 0
       - name: Get Helm chart version
         run: |
-          helm_chart_version=$(grep '^version:' deploy/charts/Chart.yaml | sed 's/.*: //')
-          echo "Helm Chart Version: ${helm_chart_version}"
-          echo "HELM_CHART_VERSION=${helm_chart_version}" >> $GITHUB_ENV
-      - name: Tag version
+          helm_chart_version=$(grep '^version:' Chart.yaml | sed 's/.*: //')
+          echo "HELM_CHART_VERSION=helm-${helm_chart_version}" >> $GITHUB_ENV
+        working-directory: 'deploy/charts'
+      - name: Tag Helm version
         run: |
             git config user.email "noreply@hoprnet.org"
             git config user.name "HOPR CI robot"

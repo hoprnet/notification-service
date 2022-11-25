@@ -21,7 +21,6 @@ rules:
 #      - services
     verbs:
       - get
-      - list
   - apiGroups:
       - ""
     resources:
