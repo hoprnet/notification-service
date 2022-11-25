@@ -33,7 +33,7 @@ clusterDomain: cluster.local
 image:
   registry: gcr.io
   repository: hoprassociation/notification-service
-  tag: v1.0
+  tag: latest
   digest: ""
   ## Specify a imagePullPolicy
   ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
