@@ -7,7 +7,7 @@ import { ElementNotificationService } from './element-notification.service';
 
 const moment = require('moment');
 const debugLog: debug.IDebugger = debug('notification-service:alertmanager-routes');
-const GITHUB_URL_IMAGE_BASE= "https://github.com/hoprnet/notification-service/raw/master/images";
+const GITHUB_URL_IMAGE_BASE= "https://raw.githubusercontent.com/hoprnet/notification-service/master/images";
 
 /**
  * Configure a route to handle AlertManager alerts and notify them via Element 
@@ -50,7 +50,7 @@ export class AlertManagerRoutes extends CommonRoutesConfig {
         let startedDate = (moment(alert.startsAt)).format('HH:mm:ss')
         tableRowLines.push('\t\t\t<tr>');
         tableRowLines.push(`\t\t\t\t<td><a href="${alert.annotations.runbook_url}" target="_blank">${alert.labels.alertname}</a></td>`);
-        tableRowLines.push(`\t\t\t\t<td><img src="${GITHUB_URL_IMAGE_BASE}/${alert.labels.severity}.svg"/></td>`);
+        tableRowLines.push(`\t\t\t\t<td><img width=50" src="${GITHUB_URL_IMAGE_BASE}/${alert.labels.severity}.svg"/></td>`);
         tableRowLines.push(`\t\t\t\t<td>${startedDate}</td>`);
         tableRowLines.push(`\t\t\t\t<td>${alert.annotations.description}</td>`);
         tableRowLines.push('\t\t\t</tr>');        
@@ -66,7 +66,7 @@ export class AlertManagerRoutes extends CommonRoutesConfig {
         let headingLines: string[] = [];
 
         // Severity
-        headingLines.push(`\t<p>\n\t\t<img src="${GITHUB_URL_IMAGE_BASE}/${this.getHighestSeverity(parentAlert.alerts)}.png"/>\n\t</p>`);
+        headingLines.push(`\t<p>\n\t\t<img width=100" src="${GITHUB_URL_IMAGE_BASE}/${this.getHighestSeverity(parentAlert.alerts)}.png"/>\n\t</p>`);
 
         // Summary
         if( parentAlert.commonAnnotations.summary ) {
