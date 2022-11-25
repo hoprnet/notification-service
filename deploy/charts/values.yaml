@@ -29,7 +29,6 @@ clusterDomain: cluster.local
 ## @param image.digest Image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag
 ## @param image.pullPolicy Image pull policy
 ## @param image.pullSecrets [array]  Image pull secrets
-## @param image.debug Enable Image debug mode
 ##
 image:
   registry: gcr.io
@@ -49,9 +48,6 @@ image:
   ##   - myRegistryKeySecretName
   ##
   pullSecrets: []
-  ## Enable debug mode
-  ##
-  debug: false
 
 ## @param containerPorts.http Controller HTTP container port to open
 ##
