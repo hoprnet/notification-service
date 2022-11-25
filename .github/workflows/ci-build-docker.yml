@@ -32,10 +32,9 @@ jobs:
       - name: Check if docker tag exists
         run: |
           docker_tag=$(jq -r '.version' package.json)
-          echo "Docker tag: ${docker_tag}"
-          images=$(gcloud container images  list-tags  gcr.io/hoprassociation/network-service --filter="tags[]=${docker_tag}")
+          images=$(gcloud container images  list-tags  gcr.io/hoprassociation/notification-service --filter="tags[]=${docker_tag}")
           echo "gcr images: ${images}"
-          if [ "${images}" ne "Listed 0 items." ]; then 
+          if [ ! "${images}" = "Listed 0 items." ]; then 
             echo "The docker image tag already exists. Please bump package.json version"; 
             exit 1
           fi

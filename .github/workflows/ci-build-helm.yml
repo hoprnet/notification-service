@@ -11,7 +11,7 @@ on:
     paths:
       - "deploy/charts/**"
 jobs:
-  build-docker:
+  build-helm:
     runs-on: ubuntu-latest
 
     steps:
@@ -22,9 +22,9 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}        
       - name: Check Helm chart version already exists
         run: |
-          helm_chart_version=$(grep '^version:' Chart.yaml | sed 's/.*: //')
+          helm_chart_version=$(grep '^version:' Chart.yaml | sed 's/.*: /helm-/')
           echo "Helm Chart Version: ${helm_chart_version}"
-          if git tag -l | grep 'helm-${helm_chart_version}' 1> /dev/null; then 
+          if git tag -l | grep ${helm_chart_version} 1> /dev/null; then 
             echo "The Helm chart version already exists. Please bump property 'version' on ./deploy/charts/Chart.yaml to a new version";
             exit 1
           fi

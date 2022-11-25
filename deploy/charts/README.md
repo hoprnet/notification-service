@@ -4,11 +4,6 @@
 
 This chart packages all the kubernetes resources needed to publish the notification service on Kubernetes
 
-## Prerequisites
-
-- Kubernetes 1.24+
-- Helm 3.1.0
-
 ## Installing
 
 ```console
