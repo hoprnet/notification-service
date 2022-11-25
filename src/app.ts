@@ -49,6 +49,9 @@ app.use(expressWinston.errorLogger({
 app.get('/', (req: express.Request, res: express.Response) => {
     res.status(200).send(`Notification Service works`)
 });
+app.get('/healthz', (req: express.Request, res: express.Response) => {
+    res.status(200).send(`Service is alive`)
+});
 server.listen(port, () => {
     routes.forEach((route: CommonRoutesConfig) => {
         debugLog(`Routes configured for ${route.getName()}`);
