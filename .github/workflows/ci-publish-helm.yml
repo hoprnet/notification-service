@@ -7,9 +7,6 @@ on:
       - closed
     paths:
       - "deploy/charts/**/*"
-defaults:
-  run:
-    working-directory: 'deploy/charts'
 jobs:
   build-docker:
     runs-on: ubuntu-latest
@@ -21,8 +18,9 @@ jobs:
           fetch-depth: 0
       - name: Get Helm chart version
         run: |
-          helm_chart_version=$(grep '^version:' deploy/charts/Chart.yaml | sed 's/.*: //')
+          helm_chart_version=$(grep '^version:' Chart.yaml | sed 's/.*: //')
           echo "HELM_CHART_VERSION=helm-${helm_chart_version}" >> $GITHUB_ENV
+        working-directory: 'deploy/charts'
       - name: Tag Helm version
         run: |
             git config user.email "noreply@hoprnet.org"
