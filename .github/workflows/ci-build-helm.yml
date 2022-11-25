@@ -3,8 +3,13 @@ on:
   pull_request_target:
     branches:
       - master
-    paths-ignore:
-      - "deploy/charts/**/*"
+    types: 
+      - opened
+      - ready_for_review
+      - synchronize
+      - reopened      
+    paths:
+      - "deploy/charts/**"
 jobs:
   build-docker:
     runs-on: ubuntu-latest
@@ -12,6 +17,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}        
       - name: Check Helm chart version already exists
         run: |
           helm_chart_version=$(grep '^version:' deploy/charts/Chart.yaml | sed 's/.*: //')
