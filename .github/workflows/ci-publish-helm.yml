@@ -8,7 +8,7 @@ on:
     paths:
       - "deploy/charts/**/*"
 jobs:
-  build-docker:
+  publish-helm:
     runs-on: ubuntu-latest
 
     steps:

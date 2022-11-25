@@ -8,7 +8,7 @@ on:
     paths-ignore:
       - "deploy/charts/**/*"
 jobs:
-  build-docker:
+  publish-docker:
     runs-on: ubuntu-latest
 
     steps:
