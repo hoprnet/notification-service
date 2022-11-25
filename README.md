@@ -21,11 +21,11 @@ NODE_ENV=development
 curl -H "Content-Type: application/json" -X POST --data "@test/alertmanager-notification.json" http://localhost:8080/alertmanager/room/${roomId}
 ```
 
-## Build
+## Pipelines
 
-1. Build image
-2. Publish image
-3. Deploy Helm chart
+1. Helm chart README.md file is updated automatically with changes on values.yaml
+2. Package version needs to be updated when creating a PR that impact docker image
+3. Helm chart version needs to be updated when creating a PR that impact chart files
 
 ## License
 
