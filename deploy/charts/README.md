@@ -135,16 +135,17 @@ Chart version `Chart.yaml` should be increased according to [semver](http://semv
 
 ### Other Parameters
 
-| Name                                          | Description                                                      | Value                  |
-| --------------------------------------------- | ---------------------------------------------------------------- | ---------------------- |
-| `rbac.create`                                 | Specifies whether RBAC resources should be created               | `true`                 |
-| `rbac.unsealer.rules`                         | Custom RBAC rules to set for unsealer ClusterRole                | `[]`                   |
-| `rbac.keyAdmin.rules`                         | Custom RBAC rules to set for key-admin role                      | `[]`                   |
-| `rbac.serviceProxier.rules`                   | Custom RBAC rules to set for service-proxier role                | `[]`                   |
-| `serviceAccount.create`                       | Specifies whether a ServiceAccount should be created             | `true`                 |
-| `serviceAccount.name`                         | The name of the ServiceAccount to use.                           | `notification-service` |
-| `serviceAccount.annotations`                  | Additional Service Account annotations (evaluated as a template) | `{}`                   |
-| `serviceAccount.automountServiceAccountToken` | Automount service account token for the server service account   | `true`                 |
+| Name                                          | Description                                                                                                      | Value                  |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| `matrix.apiToken`                             | Value of the Element API token. (This value can be obtained from the users settings, under the Help & About tab) | `""`                   |
+| `rbac.create`                                 | Specifies whether RBAC resources should be created                                                               | `true`                 |
+| `rbac.unsealer.rules`                         | Custom RBAC rules to set for unsealer ClusterRole                                                                | `[]`                   |
+| `rbac.keyAdmin.rules`                         | Custom RBAC rules to set for key-admin role                                                                      | `[]`                   |
+| `rbac.serviceProxier.rules`                   | Custom RBAC rules to set for service-proxier role                                                                | `[]`                   |
+| `serviceAccount.create`                       | Specifies whether a ServiceAccount should be created                                                             | `true`                 |
+| `serviceAccount.name`                         | The name of the ServiceAccount to use.                                                                           | `notification-service` |
+| `serviceAccount.annotations`                  | Additional Service Account annotations (evaluated as a template)                                                 | `{}`                   |
+| `serviceAccount.automountServiceAccountToken` | Automount service account token for the server service account                                                   | `true`                 |
 
 
 ### Metrics parameters
