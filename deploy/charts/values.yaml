@@ -355,6 +355,12 @@ ingress:
 ## @section Other Parameters
 ##
 
+## Matrix Configuration
+##
+matrix:
+  ## @param matrix.apiToken Value of the Element API token. (This value can be obtained from the users settings, under the Help & About tab)
+  ##
+  apiToken: ""
 ## RBAC configuration
 ##
 rbac:
