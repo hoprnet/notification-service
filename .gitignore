@@ -3,3 +3,4 @@ lib/
 node_modules/
 deploy/charts/Chart.lock
 deploy/charts/charts/*.tgz
+.DS_Store

@@ -7,7 +7,6 @@ import { ElementNotificationService } from './element-notification.service';
 
 const moment = require('moment');
 const debugLog: debug.IDebugger = debug('notification-service:alertmanager-routes');
-const GITHUB_URL_IMAGE_BASE= "https://raw.githubusercontent.com/hoprnet/notification-service/master/images";
 
 /**
  * Configure a route to handle AlertManager alerts and notify them via Element 
@@ -50,7 +49,8 @@ export class AlertManagerRoutes extends CommonRoutesConfig {
         let startedDate = (moment(alert.startsAt)).format('HH:mm:ss')
         tableRowLines.push('\t\t\t<tr>');
         tableRowLines.push(`\t\t\t\t<td><a href="${alert.annotations.runbook_url}" target="_blank">${alert.labels.alertname}</a></td>`);
-        tableRowLines.push(`\t\t\t\t<td><img width=50" src="${GITHUB_URL_IMAGE_BASE}/${alert.labels.severity}.svg"/></td>`);
+        tableRowLines.push(`\t\t\t\t<td>${alert.labels.severity}</td>`);
+        tableRowLines.push(`\t\t\t\t<td>${alert.status}</td>`);
         tableRowLines.push(`\t\t\t\t<td>${startedDate}</td>`);
         tableRowLines.push(`\t\t\t\t<td>${alert.annotations.description}</td>`);
         tableRowLines.push('\t\t\t</tr>');        
@@ -65,17 +65,21 @@ export class AlertManagerRoutes extends CommonRoutesConfig {
     parseHeadingAlert (parentAlert: ParentAlert): string[] {
         let headingLines: string[] = [];
 
-        // Severity
-        headingLines.push(`\t<p>\n\t\t<img width=100" src="${GITHUB_URL_IMAGE_BASE}/${this.getHighestSeverity(parentAlert.alerts)}.png"/>\n\t</p>`);
-
         // Summary
         if( parentAlert.commonAnnotations.summary ) {
             headingLines.push(`\t<h2>${parentAlert.commonAnnotations.summary}</h2>`);
         } else if (parentAlert.commonAnnotations.summary_group ) {
             headingLines.push(`\t<h2>${parentAlert.commonAnnotations.summary_group}</h2>`);
         } else {
-            headingLines.push('\t<h4>[ monitoring ][ infrastructure ] A general alert has raisen</h4>');
+            if(parentAlert.status == 'resolved') {
+                headingLines.push('\t<h4>[ monitoring ][ infrastructure ] A general alert has resolved</h4>');
+            } else {
+                headingLines.push('\t<h4>[ monitoring ][ infrastructure ] A general alert has been fired</h4>');
+            }
         }
+        // Severity and Status
+        headingLines.push(`\t<p>\n\t\t<b>Severity:</b> ${this.getHighestSeverity(parentAlert.alerts)}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Status:</b> ${parentAlert.status}\n\t</p>`);
+
 
         // Description
         if( parentAlert.commonAnnotations.description ) {
@@ -100,6 +104,7 @@ export class AlertManagerRoutes extends CommonRoutesConfig {
         tableLines.push('\t\t<thead>');
         tableLines.push('\t\t\t<td>Name</td>');
         tableLines.push('\t\t\t<td>Severity</td>');
+        tableLines.push('\t\t\t<td>Status</td>');
         tableLines.push('\t\t\t<td>Started</td>');
         tableLines.push('\t\t\t<td>Description</td>');
         tableLines.push('\t\t</thead>');

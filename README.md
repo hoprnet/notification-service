@@ -15,7 +15,8 @@ NODE_ENV=development
 ```
 - Compile: `npm run build`
 - Start the service: `npm run start:dev`
-- Get the id of the room where the user holding the API token has permission to send messages. The room id can be obtained from the Room Settings, under the Advanced tab. Eg: `wNGkijjxWsgBSbpNih:hoprnet.io` will send messages to `notification-service-testing` channel
+- Get the id of the room where the user holding the API token has permission to send messages. The room id can be obtained from the Room Settings, under the Advanced tab. Eg: `!wNGkijjxWsgBSbpNih:hoprnet.io` will send messages to `notification-service-testing` channel
+- Notice that the roomId starts with the character `!` which needs to be replaced from the curl command with the character `%21`
 - Test the service: 
 ```
 curl -H "Content-Type: application/json" -X POST --data "@test/alertmanager-notification.json" http://localhost:8080/alertmanager/room/${roomId}
