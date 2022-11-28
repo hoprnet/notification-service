@@ -1,7 +1,7 @@
 annotations:
   category: Hopr
 apiVersion: v2
-appVersion: v1.0
+appVersion: 1.0.2
 dependencies:
   - name: common
     repository: https://charts.bitnami.com/bitnami
@@ -21,4 +21,4 @@ maintainers:
   - name: Hopr Association
     url: https://hoprnet.org/
 name: notification-service
-version: v1.1
+version: v1.1.1
