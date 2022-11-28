@@ -40,7 +40,7 @@ export class ElementNotificationService {
         const requestOptions: https.RequestOptions = {
             host: this.serverHost,
             port: 443,
-            path: `/_matrix/client/r0/rooms/%21${roomId}/send/m.room.message/${messageId}`,
+            path: `/_matrix/client/r0/rooms/${roomId}/send/m.room.message/${messageId}`,
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${this.apiToken}`,
