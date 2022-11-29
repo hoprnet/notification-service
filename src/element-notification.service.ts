@@ -5,7 +5,7 @@ import debug from 'debug';
 const debugLog: debug.IDebugger = debug('notification-service:element-notification-service');
 
 /**
- * Servicec class that wraps the sending of messages to Element rooms
+ * Service class that wraps the sending of messages to Element rooms
  */
 export class ElementNotificationService {
 
