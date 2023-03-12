@@ -1,6 +1,6 @@
 # Notification Service
 
-The goal of this repository is to create a centralized service in charge of handling the notifications with externall tools like Email, Element or SNS. At this moment, only Element notification is supported
+The goal of this repository is to create a centralized service in charge of handling the notifications with external tools like Email, Element or SMS. At this moment, only Element notification is supported
 
 ## Development configuration
 
