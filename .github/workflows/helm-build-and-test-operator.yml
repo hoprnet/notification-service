@@ -89,7 +89,7 @@ jobs:
 
       - name: Helm Package
         run: |
-          helm repo add mittwald https://helm.mittwald.de
+          helm repo add bitnami https://charts.bitnami.com/bitnami
           helm repo update
           helm dependency build
           helm package . --version ${{ env.HELM_CHART_VERSION }}
