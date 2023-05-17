@@ -4,3 +4,4 @@ node_modules/
 deploy/charts/Chart.lock
 deploy/charts/charts/*.tgz
 .DS_Store
+charts/notification-service/values-testing.yaml
