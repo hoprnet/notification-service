@@ -1,0 +1,66 @@
+---
+
+name: 'Build Container'
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - "charts/**/*"
+concurrency:
+  group: ${{ github.head_ref }}-container
+  cancel-in-progress: true
+jobs:
+  bump_version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Bump Package version
+        id: bumping_version
+        run: |
+          container_version=$(jq -r '.version' package.json)
+          git_tag=$(git tag -l ${container_version})
+          echo "Workspace version is ${container_version} while tagged is ${git_tag}"
+          if [ "${git_tag}" = "${container_version}" ]; then
+            patch_number=$(echo $git_tag | sed 's/.*\.//')
+            release_number=$(echo $git_tag | sed "s/\.${patch_number}//")
+            bump_version=${release_number}.$((patch_number + 1))
+            echo "The version ${git_tag} already exists, bumping to version ${bump_version}";
+            wget https://github.com/mikefarah/yq/releases/download/4.2.0/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
+            yq -iP e ".version |= \"${bump_version}\"" package.json -j
+            yq -iP e ".version |= \"${bump_version}\"" package-lock.json -j
+            echo "bumped_version=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Commit and push
+        if: ${{ steps.bumping_version.outputs.bumped_version }}
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Bump Package version
+          repository: .
+          commit_user_name: HOPR CI robot
+          commit_user_email: noreply@hoprnet.org
+          commit_author: HOPR CI robot <noreply@hoprnet.org>
+          skip_fetch: false
+          skip_checkout: false
+          create_branch: false
+
+  build:
+    needs: bump_version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build container image
+        uses: docker/build-push-action@v4
+        with:
+          push: false
+          tags: gcr.io/hoprassociation/notification-service:latest
+          build-args: |
+            NODEJS_18_IMAGE=node:18@sha256:2771803756cf54d0b8031fa5239420386608bcff9f69f9e8a7afda0671982537
+            NODEJS_18_ALPINE_IMAGE=node:18-alpine@sha256:67373bd5d90ea600cb5f0fa58d7a5a4e6ebf50b6e05c50c1d1cc22df5134db43

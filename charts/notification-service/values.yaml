@@ -361,6 +361,10 @@ matrix:
   ## @param matrix.apiToken Value of the Element API token. (This value can be obtained from the users settings, under the Help & About tab)
   ##
   apiToken: ""
+
+  ## @param matrix.secretReferenceKey Reference to an existing secret containing the following entry: MATRIX_API_TOKEN
+  secretReferenceKey: ""
+
 ## RBAC configuration
 ##
 rbac:

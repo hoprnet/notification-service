@@ -93,7 +93,7 @@ spec:
                 name: {{ include "common.tplvalues.render" (dict "value" .Values.extraEnvVarsSecret "context" $) }}
             {{- end }}
             - secretRef:
-                name: {{ template "common.names.fullname" . }}
+                name: {{ include "notification-service.secretApiToken" . }}
           ports:
             - name: http
               containerPort: {{ .Values.containerPorts.http }}

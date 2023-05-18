@@ -39,7 +39,6 @@ Chart version `Chart.yaml` should be increased according to [semver](http://semv
 | `commonAnnotations` | Annotations to add to all deployed objects         | `{}`            |
 | `clusterDomain`     | Kubernetes cluster domain name                     | `cluster.local` |
 
-
 ### Notification Service Parameters
 
 | Name                                                | Description                                                                                                              | Value                                  |
@@ -104,7 +103,6 @@ Chart version `Chart.yaml` should be increased according to [semver](http://semv
 | `extraEnvVarsCM`                                    | Name of existing ConfigMap containing extra env vars for nodes                                                           | `""`                                   |
 | `extraEnvVarsSecret`                                | Name of existing Secret containing extra env vars for nodes                                                              | `""`                                   |
 
-
 ### Traffic Exposure Parameters
 
 | Name                               | Description                                                                                           | Value                        |
@@ -132,12 +130,12 @@ Chart version `Chart.yaml` should be increased according to [semver](http://semv
 | `ingress.extraPaths`               | An array with additional arbitrary paths that may need to be added to the ingress under the main host | `[]`                         |
 | `ingress.extraRules`               | Additional rules to be covered with this ingress record                                               | `[]`                         |
 
-
 ### Other Parameters
 
 | Name                                          | Description                                                                                                      | Value                  |
 | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------- |
 | `matrix.apiToken`                             | Value of the Element API token. (This value can be obtained from the users settings, under the Help & About tab) | `""`                   |
+| `matrix.secretReferenceKey`                   | Reference to an existing secret containing the following entry: MATRIX_API_TOKEN                                 | `""`                   |
 | `rbac.create`                                 | Specifies whether RBAC resources should be created                                                               | `true`                 |
 | `rbac.unsealer.rules`                         | Custom RBAC rules to set for unsealer ClusterRole                                                                | `[]`                   |
 | `rbac.keyAdmin.rules`                         | Custom RBAC rules to set for key-admin role                                                                      | `[]`                   |
@@ -146,7 +144,6 @@ Chart version `Chart.yaml` should be increased according to [semver](http://semv
 | `serviceAccount.name`                         | The name of the ServiceAccount to use.                                                                           | `notification-service` |
 | `serviceAccount.annotations`                  | Additional Service Account annotations (evaluated as a template)                                                 | `{}`                   |
 | `serviceAccount.automountServiceAccountToken` | Automount service account token for the server service account                                                   | `true`                 |
-
 
 ### Metrics parameters
 
