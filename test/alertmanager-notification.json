@@ -1,1 +1,34 @@
-{"receiver":"devops-team","status":"firing","alerts":[{"status":"firing","labels":{"alertname":"kubernetes-node-high-memory-load","severity":"warning"},"annotations":{"description":"The kubernetes node 'vm-stage-k8s-master-3' with ip '10.0.0.5' has the RAM memory is almost full. The average memory usage is at 48.66%","runbook_url":"https://github.com/hoprnet/hopr-devops/tree/main/docs/alerts/kubernetes-node-high-memory-load.md","summary":"[ kubernetes-node-high-memory-load ] Kubernetes node memory is almost full"},"startsAt":"2022-11-22T12:43:32.711Z","fingerprint":"8d4337111be8af2b"}],"groupLabels":{"alerttype":"infrastructure"},"commonLabels":{"alerttype":"infrastructure","prometheus":"monitoring/prometheus-prometheus","team":"devops-team"},"commonAnnotations":{},"externalURL":"http://alertmanager.stg.hoprtech.net","version":"4","groupKey":"{}/{team=\"devops-team\"}:{alerttype=\"infrastructure\"}","truncatedAlerts":0}
+{
+    "receiver":"devops-team",
+    "status":"firing",
+    "alerts":[{
+        "status":"firing",
+        "labels":{
+            "alertname":"kubernetes-node-high-memory-load",
+            "severity":"warning",
+            "environment": "stage"
+        },
+        "annotations":{
+            "description":"The kubernetes node 'vm-stage-k8s-master-3' with ip '10.0.0.5' has the RAM memory is almost full. The average memory usage is at 48.66%",
+            "runbook_url":"https://github.com/hoprnet/hopr-devops/tree/main/docs/alerts/kubernetes-node-high-memory-load.md",
+            "summary":"Kubernetes node memory is almost full"
+        },
+        "startsAt":"2022-11-22T12:43:32.711Z",
+        "fingerprint":"8d4337111be8af2b"
+    }],
+    "groupLabels":{
+        "alerttype":"infrastructure"
+    },
+    "commonLabels":{
+        "prometheus":"monitoring/prometheus-prometheus",
+        "team":"devops-team",
+        "environment":"stage"
+    },
+    "commonAnnotations":{
+        "summary":"Kubernetes node memory is almost full"
+    },
+    "externalURL":"http://alertmanager.stg.hoprtech.net",
+    "version":"4",
+    "groupKey":"{}/{team=\"devops-team\"}:{alerttype=\"infrastructure\"}",
+    "truncatedAlerts":0
+}

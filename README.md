@@ -19,7 +19,7 @@ NODE_ENV=development
 - Notice that the roomId starts with the character `!` which needs to be replaced from the curl command with the character `%21`
 - Test the service: 
 ```
-curl -H "Content-Type: application/json" -X POST --data "@test/alertmanager-notification.json" http://localhost:8080/alertmanager/room/${roomId}
+curl -H "Content-Type: application/json" -X POST --data "@test/alertmanager-notification.json" http://localhost:8080/alertmanager/room/%21wNGkijjxWsgBSbpNih:hoprnet.io
 ```
 
 ## Pipelines
