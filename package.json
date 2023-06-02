@@ -1,6 +1,6 @@
 {
   "name": "notification-service",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "repository": "https://github.com/hoprnet/notification-service",
   "description": "A notification service which integrate source notifications like Alertmanager with targe notifications like Element, Email",
   "main": "app.ts",
