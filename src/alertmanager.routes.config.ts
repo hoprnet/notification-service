@@ -66,24 +66,24 @@ export class AlertManagerRoutes extends CommonRoutesConfig {
         let headingLines: string[] = [];
 
         // Summary
-        let environment = parentAlert.commonLabels.environment ? parentAlert.commonLabels.environment : "Unknown";
+        let environment = parentAlert.commonLabels.environment ? `[ ${parentAlert.commonLabels.environment} ]` : "";
         if( parentAlert.commonAnnotations.summary ) {
             if(parentAlert.status == 'resolved') {
-                headingLines.push(`\t<h4>[ &#127871; Calm down ][ ${environment} ] ${parentAlert.commonAnnotations.summary} is resolved</h4>`);
+                headingLines.push(`\t<h4>[ &#127871; Calm down ]${environment} ${parentAlert.commonAnnotations.summary} is resolved</h4>`);
             } else {
-                headingLines.push(`\t<h4>[ &#128293; Alarm ][ ${environment} ] ${parentAlert.commonAnnotations.summary}</h4>`);
+                headingLines.push(`\t<h4>[ &#128293; Alarm ]${environment} ${parentAlert.commonAnnotations.summary}</h4>`);
             }
         } else if (parentAlert.commonAnnotations.summary_group ) {
             if(parentAlert.status == 'resolved') {
-                headingLines.push(`\t<h4>[ &#127871; Calm down ][ ${environment} ] ${parentAlert.commonAnnotations.summary_group} is resolved</h4>`);
+                headingLines.push(`\t<h4>[ &#127871; Calm down ]${environment} ${parentAlert.commonAnnotations.summary_group} is resolved</h4>`);
             } else {
-                headingLines.push(`\t<h4>[ &#128293; Alarm ][ ${environment} ] ${parentAlert.commonAnnotations.summary_group}</h4>`);
+                headingLines.push(`\t<h4>[ &#128293; Alarm ]${environment} ${parentAlert.commonAnnotations.summary_group}</h4>`);
             }
         } else {
             if(parentAlert.status == 'resolved') {
-                headingLines.push(`\t<h4>[ &#127871; Calm down ][ ${environment} ] Multiple alarms have been resolved</h4>`);
+                headingLines.push(`\t<h4>[ &#127871; Calm down ]${environment} Multiple alarms have been resolved</h4>`);
             } else {
-                headingLines.push(`\t<h4>[ &#128293; Alarm ][ ${environment} ] Multiple alarms have been fired</h4>`);
+                headingLines.push(`\t<h4>[ &#128293; Alarm ]${environment} Multiple alarms have been fired</h4>`);
             }
         }
         // Environment, Severity and Status
