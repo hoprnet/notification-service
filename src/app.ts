@@ -24,16 +24,6 @@ const debugLog: debug.IDebugger = debug('notification-service:app');
 app.use(bodyParser.json())
 app.use(cors());
 
-app.use(expressWinston.logger({
-    transports: [
-        new winston.transports.Console()
-    ],
-    format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.json()
-    )
-}));
-
 routes.push(new AlertManagerRoutes(app));
 
 app.use(expressWinston.errorLogger({

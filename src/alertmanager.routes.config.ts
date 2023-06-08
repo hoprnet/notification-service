@@ -66,19 +66,31 @@ export class AlertManagerRoutes extends CommonRoutesConfig {
         let headingLines: string[] = [];
 
         // Summary
+        let environment = parentAlert.commonLabels.environment ? `[ ${parentAlert.commonLabels.environment} ]` : "";
         if( parentAlert.commonAnnotations.summary ) {
-            headingLines.push(`\t<h2>${parentAlert.commonAnnotations.summary}</h2>`);
+            if(parentAlert.status == 'resolved') {
+                headingLines.push(`\t<h4>[ &#127871; Calm down ]${environment} ${parentAlert.commonAnnotations.summary} is resolved</h4>`);
+            } else {
+                headingLines.push(`\t<h4>[ &#128293; Alarm ]${environment} ${parentAlert.commonAnnotations.summary}</h4>`);
+            }
         } else if (parentAlert.commonAnnotations.summary_group ) {
-            headingLines.push(`\t<h2>${parentAlert.commonAnnotations.summary_group}</h2>`);
+            if(parentAlert.status == 'resolved') {
+                headingLines.push(`\t<h4>[ &#127871; Calm down ]${environment} ${parentAlert.commonAnnotations.summary_group} is resolved</h4>`);
+            } else {
+                headingLines.push(`\t<h4>[ &#128293; Alarm ]${environment} ${parentAlert.commonAnnotations.summary_group}</h4>`);
+            }
         } else {
             if(parentAlert.status == 'resolved') {
-                headingLines.push('\t<h4>[ monitoring ][ infrastructure ] A general alert has resolved</h4>');
+                headingLines.push(`\t<h4>[ &#127871; Calm down ]${environment} Multiple alarms have been resolved</h4>`);
             } else {
-                headingLines.push('\t<h4>[ monitoring ][ infrastructure ] A general alert has been fired</h4>');
+                headingLines.push(`\t<h4>[ &#128293; Alarm ]${environment} Multiple alarms have been fired</h4>`);
             }
         }
-        // Severity and Status
-        headingLines.push(`\t<p>\n\t\t<b>Severity:</b> ${this.getHighestSeverity(parentAlert.alerts)}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Status:</b> ${parentAlert.status}\n\t</p>`);
+        // Environment, Severity and Status
+        
+        headingLines.push(`\t<p>\n\t\t<b>Environment:</b> ${environment}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`);
+        headingLines.push(`\t\t<b>Severity:</b> ${this.getHighestSeverity(parentAlert.alerts)}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`);
+        headingLines.push(`\t\t<b>Status:</b> ${parentAlert.status}\n\t</p>`);
 
 
         // Description
