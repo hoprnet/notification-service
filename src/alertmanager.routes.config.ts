@@ -66,7 +66,8 @@ export class AlertManagerRoutes extends CommonRoutesConfig {
         let headingLines: string[] = [];
 
         // Summary
-        let environment = parentAlert.commonLabels.environment ? `[ ${parentAlert.commonLabels.environment} ]` : "";
+        let environmentName = parentAlert.commonLabels.environment ? parentAlert.commonLabels.environment : "";
+        let environment = parentAlert.commonLabels.environment ? `[ ${environmentName} ]` : "";
         if( parentAlert.commonAnnotations.summary ) {
             if(parentAlert.status == 'resolved') {
                 headingLines.push(`\t<h4>[ &#127871; Calm down ]${environment} ${parentAlert.commonAnnotations.summary} is resolved</h4>`);
@@ -88,7 +89,7 @@ export class AlertManagerRoutes extends CommonRoutesConfig {
         }
         // Environment, Severity and Status
         
-        headingLines.push(`\t<p>\n\t\t<b>Environment:</b> ${environment}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`);
+        headingLines.push(`\t<p>\n\t\t<b>Environment:</b> ${environmentName}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`);
         headingLines.push(`\t\t<b>Severity:</b> ${this.getHighestSeverity(parentAlert.alerts)}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`);
         headingLines.push(`\t\t<b>Status:</b> ${parentAlert.status}\n\t</p>`);
 
