@@ -110,6 +110,13 @@ pub fn to_markdown(alert: &Alert, config: &Config) -> String {
     if let Some(container) = &alert.labels.container {
         writeln!(out, "- **Container:** `{}`", container).unwrap();
     }
+    // Only shown when both fields are present AND a Keep URL can be built.
+    if let (Some(parent_name), Some(url)) = (
+        &alert.correlated_parent_alert,
+        alert.correlated_parent_fingerprint.as_deref().and_then(|fp| config.keep_alert_url(fp)),
+    ) {
+        writeln!(out, "- **Correlated alerts:** [{}]({})", parent_name, url).unwrap();
+    }
 
     // ── Footer links ──────────────────────────────────────────────────────────
     writeln!(out).unwrap();
@@ -268,6 +275,8 @@ mod tests {
             generator_url: "http://prometheus/graph".into(),
             description: None,
             rca_summary: None,
+            correlated_parent_alert: None,
+            correlated_parent_fingerprint: None,
             namespace: Some("monitoring".into()),
             labels: AlertLabels {
                 pod: Some("my-pod".into()),
@@ -381,7 +390,7 @@ mod tests {
         let mut alert = make_alert("firing", "critical");
         alert.rca_summary = Some("Memory leak in the connection pool introduced in v1.4.2.".into());
         let msg = to_markdown(&alert, &make_config(""));
-        assert!(msg.contains("**Root cause analysis**"));
+        assert!(msg.contains("**Root cause analysis:**"));
         assert!(msg.contains("Memory leak in the connection pool introduced in v1.4.2."));
     }
 
@@ -389,6 +398,33 @@ mod tests {
     fn rca_summary_hidden_when_absent() {
         let msg = to_markdown(&make_alert("firing", "warning"), &make_config(""));
         assert!(!msg.contains("Root cause analysis"));
+    }
+
+    #[test]
+    fn correlated_alert_shown_with_keep_url() {
+        let mut alert = make_alert("firing", "critical");
+        alert.correlated_parent_alert = Some("ParentAlert".into());
+        alert.correlated_parent_fingerprint = Some("deadbeef1234".into());
+        let msg = to_markdown(&alert, &make_config("https://incidents.example.com"));
+        assert!(msg.contains("**Correlated alerts:**"));
+        assert!(msg.contains("[ParentAlert]"));
+        assert!(msg.contains("alertPayloadFingerprint=deadbeef1234"));
+    }
+
+    #[test]
+    fn correlated_alert_hidden_without_keep_url() {
+        let mut alert = make_alert("firing", "critical");
+        alert.correlated_parent_alert = Some("ParentAlert".into());
+        alert.correlated_parent_fingerprint = Some("deadbeef1234".into());
+        // No KEEP_BASE_URL configured → bullet must be suppressed entirely
+        let msg = to_markdown(&alert, &make_config(""));
+        assert!(!msg.contains("Correlated alerts"));
+    }
+
+    #[test]
+    fn correlated_alert_hidden_when_absent() {
+        let msg = to_markdown(&make_alert("firing", "warning"), &make_config("https://incidents.example.com"));
+        assert!(!msg.contains("Correlated alerts"));
     }
 
     #[test]

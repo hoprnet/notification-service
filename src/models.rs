@@ -60,6 +60,12 @@ pub struct Alert {
     /// Free-text root cause analysis summary (`rca_summary`).
     /// Rendered as a dedicated section in the Zulip message when present.
     pub rca_summary: Option<String>,
+    /// Name of the parent alert this alert is correlated with (`correlated_parent_alert`).
+    /// Rendered as a linked bullet when both this and `correlated_parent_fingerprint` are present.
+    pub correlated_parent_alert: Option<String>,
+    /// Fingerprint of the parent alert (`correlated_parent_fingerprint`).
+    /// Used together with `KEEP_BASE_URL` to build the deep-link.
+    pub correlated_parent_fingerprint: Option<String>,
     /// Kubernetes namespace the alert originated from.
     /// Used to route the notification to the correct Zulip stream.
     pub namespace: Option<String>,
@@ -166,6 +172,8 @@ impl Alert {
             generator_url: generator_url.unwrap(),
             description: opt_str(v, "/description"),
             rca_summary: opt_str(v, "/rca_summary"),
+            correlated_parent_alert: opt_str(v, "/correlated_parent_alert"),
+            correlated_parent_fingerprint: opt_str(v, "/correlated_parent_fingerprint"),
             namespace: opt_str(v, "/namespace"),
             labels: AlertLabels {
                 pod: opt_str(v, "/labels/pod"),
