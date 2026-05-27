@@ -4,23 +4,26 @@ use std::sync::Arc;
 
 use crate::{config::Config, models::Alert, output, processing};
 
-/// `POST /alerts` — receive an alert payload, enrich it, and dispatch it.
+/// `POST /alerts` — receive any JSON alert payload, extract known fields,
+/// enrich it, and dispatch it.
 ///
 /// # Request
-/// JSON body matching [`Alert`].
+/// Any valid JSON object.  Unknown fields are silently ignored.
 ///
 /// # Response
 /// - `200 OK` — alert was accepted and processed successfully.
-/// - `422 Unprocessable Entity` — request body is invalid or missing required fields.
+/// - `422 Unprocessable Entity` — request body is not valid JSON.
 pub async fn receive_alert(
     State(config): State<Arc<Config>>,
-    Json(alert): Json<Alert>,
+    Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
+    let alert = Alert::from_value(&payload);
+
     tracing::info!(
-        id = %alert.id,
-        name = %alert.name,
-        severity = %alert.severity,
-        source = %alert.source,
+        id = ?alert.id,
+        name = ?alert.name,
+        severity = ?alert.severity,
+        source = ?alert.source,
         "Received alert"
     );
 

@@ -38,11 +38,11 @@ lint:
 check:
     cargo check
 
-# Send a test alert to a locally running instance
-test-alert:
+# Send a test alert to a locally running instance (pass file= to override)
+test-alert file="test/KubePodCrashLooping-01.json":
     curl -s -X POST http://localhost:8080/alerts \
       -H "Content-Type: application/json" \
-      -d @test/alert-notification.json | jq .
+      -d @{{file}} | jq .
 
 # ── Docker ────────────────────────────────────────────────────────────────────
 
