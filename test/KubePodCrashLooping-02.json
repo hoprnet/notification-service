@@ -38,7 +38,7 @@
   "deleted": false,
   "dismissUntil": null,
   "dismissed": false,
-  "assignee": "ausias.armesto@hoprnet.org",
+  "assignee": "developer@hoprnet.org",
   "providerId": null,
   "providerType": "prometheus",
   "note": null,
@@ -53,7 +53,7 @@
   "incident_dto": [
     {
       "user_generated_name": "My first incident",
-      "assignee": "ausias.armesto@hoprnet.org",
+      "assignee": "developer@hoprnet.org",
       "user_summary": "The crash-test-app container in the monitoring namespace is stuck in a CrashLoopBackOff state, unable to start for over 20 minutes. Two correlated alerts (KubeContainerWaiting and KubePodCrashLooping) indicate the pod is repeatedly crashing and failing to start.",
       "same_incident_in_the_past_id": null,
       "severity": "warning",

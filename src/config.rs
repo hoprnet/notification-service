@@ -47,6 +47,10 @@ pub struct Config {
     /// store before the eviction task removes it.  Defaults to `7`.
     /// Controlled by `MESSAGE_TTL_DAYS`.
     pub message_ttl_days: u64,
+
+    /// Timeout in seconds applied to every outbound Zulip HTTP request.
+    /// Defaults to `10`.  Controlled by `ZULIP_REQUEST_TIMEOUT_SECS`.
+    pub zulip_request_timeout_secs: u64,
 }
 
 impl Config {
@@ -77,6 +81,10 @@ impl Config {
                 .ok()
                 .and_then(|v| v.trim().parse().ok())
                 .unwrap_or(7),
+            zulip_request_timeout_secs: env::var("ZULIP_REQUEST_TIMEOUT_SECS")
+                .ok()
+                .and_then(|v| v.trim().parse().ok())
+                .unwrap_or(10),
         }
     }
 

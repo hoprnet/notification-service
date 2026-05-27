@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use serde::Deserialize;
 
@@ -18,6 +18,11 @@ use crate::{config::Config, formatter, message_store::MessageStore, models::Enri
 /// - Subsequent updates → PATCH the existing message so the stream stays clean.
 /// - On service restart the store is empty; the next update creates a fresh
 ///   message and resumes tracking from there.
+///
+/// # Timeouts
+/// A single `reqwest::Client` is built here with `ZULIP_REQUEST_TIMEOUT_SECS`
+/// (default 10 s) and shared across both the POST and PATCH calls so that a
+/// slow or stuck Zulip server never blocks the handler indefinitely.
 pub async fn send(alert: &EnrichedAlert, config: &Config, messages: &MessageStore) {
     let markdown = formatter::to_markdown(&alert.alert, config);
 
@@ -31,8 +36,8 @@ pub async fn send(alert: &EnrichedAlert, config: &Config, messages: &MessageStor
         return;
     }
 
-    let stream = config.stream_for_namespace(alert.alert.namespace.as_deref());
-    let topic = config.zulip_topic();
+    let stream      = config.stream_for_namespace(alert.alert.namespace.as_deref());
+    let topic       = config.zulip_topic();
     let fingerprint = &alert.alert.fingerprint;
 
     // Read the stored message ID without holding the lock across await points.
@@ -48,26 +53,49 @@ pub async fn send(alert: &EnrichedAlert, config: &Config, messages: &MessageStor
         "Fingerprint store lookup"
     );
 
+    // Build one shared client for whichever API call follows.
+    let client = build_client(config);
+
     if let Some(msg_id) = existing_id {
         tracing::info!(stream, topic, msg_id, fingerprint, "Updating existing Zulip message");
 
-        if let Err(e) = patch_zulip_message(config, msg_id, &markdown).await {
+        if let Err(e) = patch_zulip_message(&client, config, msg_id, &markdown).await {
             tracing::error!(error = %e, msg_id, fingerprint, "Failed to update Zulip message");
         }
     } else {
         tracing::info!(stream, topic, fingerprint, "Sending new Zulip message");
 
-        match post_zulip_message(config, stream, &topic, &markdown).await {
+        match post_zulip_message(&client, config, stream, &topic, &markdown).await {
             Ok(msg_id) => {
                 messages
                     .lock()
                     .expect("message store lock poisoned")
                     .insert(fingerprint.clone(), (msg_id, Instant::now()));
-                tracing::info!(msg_id, fingerprint, store_size = store_size + 1, "Stored new Zulip message ID");
+                tracing::info!(
+                    msg_id,
+                    fingerprint,
+                    store_size = store_size + 1,
+                    "Stored new Zulip message ID"
+                );
             }
             Err(e) => tracing::error!(error = %e, fingerprint, "Failed to send Zulip message"),
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// HTTP client
+// ---------------------------------------------------------------------------
+
+/// Build a `reqwest::Client` with the configured request timeout.
+///
+/// Called once per `send()` invocation so the timeout is always applied and
+/// no client state leaks between requests.
+fn build_client(config: &Config) -> reqwest::Client {
+    reqwest::Client::builder()
+        .timeout(Duration::from_secs(config.zulip_request_timeout_secs))
+        .build()
+        .expect("Failed to build reqwest client")
 }
 
 // ---------------------------------------------------------------------------
@@ -88,6 +116,7 @@ struct ZulipSendResponse {
 /// When `ZULIP_ENABLED=false` the HTTP call is skipped and a synthetic ID of
 /// `0` is returned so the rest of the deduplication flow behaves normally.
 async fn post_zulip_message(
+    client: &reqwest::Client,
     config: &Config,
     stream: &str,
     topic: &str,
@@ -102,22 +131,21 @@ async fn post_zulip_message(
 
     tracing::debug!(
         url,
-        email     = %config.zulip_email,
+        email       = %config.zulip_email,
         api_key_len = config.zulip_api_key.len(),
         stream,
         topic,
+        timeout_secs = config.zulip_request_timeout_secs,
         "POST Zulip message"
     );
-
-    let client = reqwest::Client::new();
 
     let response = client
         .post(&url)
         .basic_auth(&config.zulip_email, Some(&config.zulip_api_key))
         .form(&[
-            ("type", "stream"),
-            ("to", stream),
-            ("topic", topic),
+            ("type",    "stream"),
+            ("to",      stream),
+            ("topic",   topic),
             ("content", content),
         ])
         .send()
@@ -125,7 +153,7 @@ async fn post_zulip_message(
         .map_err(|e| format!("HTTP request failed: {e}"))?;
 
     let status = response.status();
-    let body = response.text().await.unwrap_or_default();
+    let body   = response.text().await.unwrap_or_default();
 
     if !status.is_success() {
         return Err(format!("Zulip API error {status}: {body}"));
@@ -146,7 +174,12 @@ async fn post_zulip_message(
 ///
 /// When `ZULIP_ENABLED=false` the HTTP call is skipped and `Ok(())` is
 /// returned immediately so the caller's log messages still appear.
-async fn patch_zulip_message(config: &Config, msg_id: u64, content: &str) -> Result<(), String> {
+async fn patch_zulip_message(
+    client: &reqwest::Client,
+    config: &Config,
+    msg_id: u64,
+    content: &str,
+) -> Result<(), String> {
     if !config.zulip_enabled {
         tracing::info!(msg_id, "[DRY-RUN] PATCH Zulip message (ZULIP_ENABLED=false)");
         return Ok(());
@@ -154,9 +187,12 @@ async fn patch_zulip_message(config: &Config, msg_id: u64, content: &str) -> Res
 
     let url = format!("https://{}/api/v1/messages/{}", config.zulip_host, msg_id);
 
-    tracing::debug!(url, msg_id, "PATCH Zulip message");
-
-    let client = reqwest::Client::new();
+    tracing::debug!(
+        url,
+        msg_id,
+        timeout_secs = config.zulip_request_timeout_secs,
+        "PATCH Zulip message"
+    );
 
     let response = client
         .patch(&url)

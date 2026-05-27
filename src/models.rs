@@ -97,6 +97,24 @@ fn opt_str(v: &serde_json::Value, path: &str) -> Option<String> {
         .map(str::to_string)
 }
 
+/// Extract a required-but-nullable string:
+/// - Key present, value is a string  → `Some(String)` (no error)
+/// - Key present, value is JSON null  → `None`         (no error)
+/// - Key absent or unexpected type    → records path in `missing`, returns `None`
+///
+/// Use this for fields that must be present in every payload but may carry a
+/// `null` value (e.g. `assignee` when unassigned).
+fn nullable_str(v: &serde_json::Value, path: &str, missing: &mut Vec<String>) -> Option<String> {
+    match v.pointer(path) {
+        Some(serde_json::Value::String(s)) => Some(s.clone()),
+        Some(serde_json::Value::Null) => None,
+        _ => {
+            missing.push(path.to_string());
+            None
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Alert::from_value
 // ---------------------------------------------------------------------------
@@ -122,8 +140,9 @@ impl Alert {
         let generator_url = req_str(v, "/generatorURL", &mut missing);
         let firing_counter = req_u64(v, "/firingCounter", &mut missing);
 
-        // `assignee` must be present as a key but may be null
-        let assignee = opt_str(v, "/assignee");
+        // `assignee` must be present as a key but its value may be null.
+        // nullable_str distinguishes absent key (→ error) from explicit null (→ None).
+        let assignee = nullable_str(v, "/assignee", &mut missing);
 
         if !missing.is_empty() {
             return Err(missing);

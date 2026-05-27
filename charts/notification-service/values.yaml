@@ -143,14 +143,18 @@ environment:
   name: ""
 
 # Zulip output configuration.
-# All values are stored in a Kubernetes Secret and injected as environment
-# variables (KEEP_BASE_URL, ENVIRONMENT_NAME, ZULIP_*, ZULIP_NAMESPACE_STREAMS).
+# Non-sensitive values (enabled, host, defaultStream, namespaceStreams,
+# messageTtlDays, requestTimeoutSecs) are stored in the ConfigMap and injected
+# as environment variables.
+# Sensitive credentials (email, apiKey) are stored in the Secret.
 zulip:
   # Set to false to disable all Zulip API calls (dry-run mode). Defaults to true.
   enabled: true
   # Days before an idle fingerprint→message-ID entry is evicted from the store.
   # After eviction the next alert for that fingerprint opens a fresh Zulip message.
   messageTtlDays: 7
+  # Timeout in seconds for outbound Zulip HTTP requests. Defaults to 10.
+  requestTimeoutSecs: 10
   # Zulip bot e-mail address (used for API authentication).
   email: ""
   # Zulip bot API key.
