@@ -57,6 +57,9 @@ pub struct Alert {
 
     // ── Optional ─────────────────────────────────────────────────────────────
     pub description: Option<String>,
+    /// Kubernetes namespace the alert originated from.
+    /// Used to route the notification to the correct Zulip stream.
+    pub namespace: Option<String>,
     pub labels: AlertLabels,
     pub annotations: AlertAnnotations,
 }
@@ -108,15 +111,15 @@ impl Alert {
         let mut missing: Vec<String> = Vec::new();
 
         // ── Required fields ──────────────────────────────────────────────────
-        let id            = req_str(v, "/id",            &mut missing);
-        let name          = req_str(v, "/name",          &mut missing);
-        let status        = req_str(v, "/status",        &mut missing);
-        let severity      = req_str(v, "/severity",      &mut missing);
-        let started_at    = req_str(v, "/startedAt",     &mut missing);
-        let last_received = req_str(v, "/lastReceived",  &mut missing);
-        let fingerprint   = req_str(v, "/fingerprint",   &mut missing);
-        let ends_at       = req_str(v, "/endsAt",        &mut missing);
-        let generator_url = req_str(v, "/generatorURL",  &mut missing);
+        let id = req_str(v, "/id", &mut missing);
+        let name = req_str(v, "/name", &mut missing);
+        let status = req_str(v, "/status", &mut missing);
+        let severity = req_str(v, "/severity", &mut missing);
+        let started_at = req_str(v, "/startedAt", &mut missing);
+        let last_received = req_str(v, "/lastReceived", &mut missing);
+        let fingerprint = req_str(v, "/fingerprint", &mut missing);
+        let ends_at = req_str(v, "/endsAt", &mut missing);
+        let generator_url = req_str(v, "/generatorURL", &mut missing);
         let firing_counter = req_u64(v, "/firingCounter", &mut missing);
 
         // `assignee` must be present as a key but may be null
@@ -128,26 +131,27 @@ impl Alert {
 
         // ── Optional fields ──────────────────────────────────────────────────
         Ok(Alert {
-            id:            id.unwrap(),
-            name:          name.unwrap(),
-            status:        status.unwrap(),
-            severity:      severity.unwrap(),
-            started_at:    started_at.unwrap(),
+            id: id.unwrap(),
+            name: name.unwrap(),
+            status: status.unwrap(),
+            severity: severity.unwrap(),
+            started_at: started_at.unwrap(),
             last_received: last_received.unwrap(),
             firing_counter: firing_counter.unwrap(),
-            fingerprint:   fingerprint.unwrap(),
+            fingerprint: fingerprint.unwrap(),
             assignee,
-            ends_at:       ends_at.unwrap(),
+            ends_at: ends_at.unwrap(),
             generator_url: generator_url.unwrap(),
-            description:   opt_str(v, "/description"),
+            description: opt_str(v, "/description"),
+            namespace: opt_str(v, "/namespace"),
             labels: AlertLabels {
-                pod:       opt_str(v, "/labels/pod"),
-                reason:    opt_str(v, "/labels/reason"),
+                pod: opt_str(v, "/labels/pod"),
+                reason: opt_str(v, "/labels/reason"),
                 container: opt_str(v, "/labels/container"),
-                app_name:  opt_str(v, "/labels/label_app_kubernetes_io_name"),
+                app_name: opt_str(v, "/labels/label_app_kubernetes_io_name"),
             },
             annotations: AlertAnnotations {
-                summary:     opt_str(v, "/annotations/summary"),
+                summary: opt_str(v, "/annotations/summary"),
                 runbook_url: opt_str(v, "/annotations/runbook_url"),
             },
         })

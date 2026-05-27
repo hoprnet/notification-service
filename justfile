@@ -3,6 +3,11 @@
 #
 # Install: cargo install just  or  brew install just
 # Usage:   just <recipe>
+#
+# Environment variables are loaded automatically from .env when present.
+# Copy .env.example to .env and fill in your values.
+
+set dotenv-load
 
 # Default: list all available recipes
 default:
@@ -56,9 +61,6 @@ docker-build version="latest":
 docker-push version="latest":
     docker push {{registry}}:{{version}}
 
-# Build and push in one step
-docker-release version: (docker-build version) (docker-push version)
-
 # ── Helm ──────────────────────────────────────────────────────────────────────
 
 chart_dir := "charts/notification-service"
@@ -67,19 +69,22 @@ chart_dir := "charts/notification-service"
 helm-lint:
     helm lint {{chart_dir}}
 
-# Render the Helm templates (dry-run, no cluster needed)
+# Render the Helm templates using the staging values (dry-run, no cluster needed)
 helm-template:
-    helm template notification-service {{chart_dir}}
+    helm template notification-service {{chart_dir}} \
+      -f {{chart_dir}}/values-staging.yaml
 
 # Install the chart into a namespace (default: "default")
 helm-install namespace="default":
     helm install notification-service {{chart_dir}} \
+      -f {{chart_dir}}/values-staging.yaml \
       --namespace {{namespace}} \
       --create-namespace
 
 # Upgrade an existing Helm release
 helm-upgrade namespace="default":
     helm upgrade notification-service {{chart_dir}} \
+      -f {{chart_dir}}/values-staging.yaml \
       --namespace {{namespace}}
 
 # Uninstall the Helm release

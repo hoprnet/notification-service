@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "notification-service.configMapName" . }}
+  labels:
+    {{- include "notification-service.labels" . | nindent 4 }}
+data:
+  KEEP_BASE_URL: {{ .Values.keep.baseUrl | quote }}
+  GRAYLOG_BASE_URL: {{ .Values.graylog.baseUrl | quote }}
+  ENVIRONMENT_NAME: {{ .Values.environment.name | quote }}
+  ZULIP_ENABLED: {{ .Values.zulip.enabled | toString | quote }}
+  MESSAGE_TTL_DAYS: {{ .Values.zulip.messageTtlDays | toString | quote }}
+  ZULIP_HOST: {{ .Values.zulip.host | quote }}
+  ZULIP_DEFAULT_STREAM: {{ .Values.zulip.defaultStream | quote }}
+  ZULIP_NAMESPACE_STREAMS: {{ .Values.zulip.namespaceStreams | toJson | quote }}
