@@ -1,0 +1,115 @@
+---
+################################################################################
+###                           Release pipeline                              ###
+###  Publishes the current version, then bumps to the next one.            ###
+################################################################################
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: Version type after release
+        required: true
+        type: choice
+        default: "patch"
+        options:
+          - rc
+          - patch
+          - minor
+          - major
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build-docker:
+    name: Docker
+    uses: hoprnet/hopr-workflows/.github/workflows/build-docker.yaml@build-docker-v2
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    with:
+      source_branch: ${{ github.ref_name }}
+      version_type: release
+      build_matrix: >-
+        [
+          {
+            "runner": "depot-ubuntu-24.04-4",
+            "architecture": "x86_64-linux",
+            "build_command": "nix run .#docker-x86_64-linux"
+          }
+        ]
+      docker_image_name: notification-service
+      fail_on_scan_vulnerabilities: ${{ vars.FAIL_ON_SCAN_VULNERABILITIES }}
+    secrets:
+      gcp_service_account: ${{ secrets.GCP_SA_GITHUB_RUNNER }}
+      cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      docker_hub_username: ${{ secrets.DOCKER_HUB_USERNAME }}
+      docker_hub_token: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+  build-helm:
+    name: Helm
+    runs-on: depot-ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4.0.0
+        with:
+          persist-credentials: false
+
+      - name: Read Helm chart version
+        id: chart
+        run: |
+          VERSION=$(grep '^version:' charts/notification-service/Chart.yaml | sed 's/version: //')
+          echo "version=${VERSION}" | tee -a $GITHUB_OUTPUT
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@6fc4af4b145ae7821d527454aa9bd537d1f2dc5f # v2.1.10
+        with:
+          credentials_json: ${{ secrets.GCP_SA_GITHUB_RUNNER }}
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@6189d56e4096ee891640bb02ac264be376592d6a # v2.1.3
+
+      - name: Helm login to Artifact Registry
+        run: |
+          gcloud auth application-default print-access-token | \
+            helm registry login -u oauth2accesstoken --password-stdin https://europe-west3-docker.pkg.dev
+
+      - name: Package Helm chart
+        run: helm package charts/notification-service --version ${{ steps.chart.outputs.version }}
+
+      - name: Push Helm chart to Artifact Registry
+        run: |
+          helm push notification-service-${{ steps.chart.outputs.version }}.tgz \
+            oci://europe-west3-docker.pkg.dev/${{ vars.GOOGLE_PROJECT }}/helm-charts
+
+  release:
+    name: Close release
+    needs:
+      - build-docker
+      - build-helm
+    runs-on: depot-ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Release version
+        uses: hoprnet/hopr-workflows/actions/release-version@release-version-v3
+        with:
+          source_branch: ${{ github.ref_name }}
+          release_type: ${{ inputs.release_type }}
+          cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          zulip_api_key: ${{ secrets.ZULIP_API_KEY }}
+          zulip_email: ${{ secrets.ZULIP_EMAIL }}
+          zulip_channel: HOPRd
+          zulip_topic: Devops
+          gcp_service_account: ${{ secrets.GCP_SA_GITHUB_RUNNER }}
+          github_token: ${{ secrets.GH_RUNNER_TOKEN }}

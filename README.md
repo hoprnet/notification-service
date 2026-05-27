@@ -1,32 +1,81 @@
-# Notification Service
+# notification-service
 
-The goal of this repository is to create a centralized service in charge of handling the notifications with external tools like Email, Element or SMS. At this moment, only Element notification is supported
+A lightweight, high-performance alert notification relay service written in **Rust**. It exposes a REST API that receives alert payloads, enriches them with processing metadata, and dispatches them to a target notification system.
 
-## Development configuration
+## Architecture
 
-- Create a .env file with the following contents:
 ```
-#DEBUG=*
-DEBUG=notification-service*
-MATRIX_SERVER_HOST=hoprnet.modular.im
-MATRIX_API_TOKEN=<This value can be obtained from the users settings, under the Help & About tab>
-PORT=8080
-NODE_ENV=development
-```
-- Compile: `npm run build`
-- Start the service: `npm run start:dev`
-- Get the id of the room where the user holding the API token has permission to send messages. The room id can be obtained from the Room Settings, under the Advanced tab. Eg: `!wNGkijjxWsgBSbpNih:hoprnet.io` will send messages to `notification-service-testing` channel
-- Notice that the roomId starts with the character `!` which needs to be replaced from the curl command with the character `%21`
-- Test the service: 
-```
-curl -H "Content-Type: application/json" -X POST --data "@test/alertmanager-notification.json" http://localhost:8080/alertmanager/room/%21wNGkijjxWsgBSbpNih:hoprnet.io
+                ┌────────────────────────────────────────────────┐
+                │              notification-service              │
+                │                                                │
+Alert sources   │   POST /alerts                                 │
+(Keep, etc.) ──►│   ──────────────► Processor ──► Output adapter │──► Zulip
+                │                                                │
+                └────────────────────────────────────────────────┘
 ```
 
-## Pipelines
+## Test
 
-1. Helm chart README.md file is updated automatically with changes on values.yaml
-2. Package version needs to be updated when creating a PR that impact docker image
-3. Helm chart version needs to be updated when creating a PR that impact chart files
+```bash
+curl -X POST http://localhost:8080/alerts \
+  -H "Content-Type: application/json" \
+  -d @test/alert-notification.json
+```
+
+---
+
+## Configuration
+
+| Environment variable | Default | Description |
+|---|---|---|
+| `PORT` | `8080` | TCP port the HTTP server listens on |
+| `RUST_LOG` | `info` | Log level filter (`debug`, `info`, `warn`, `error`) |
+| `ZULIP_EMAIL` | — | Zulip bot e-mail address (API authentication) |
+| `ZULIP_API_KEY` | — | Zulip bot API key |
+| `ZULIP_HOST` | — | Zulip server hostname (e.g. `yourorg.zulipchat.com`) |
+
+---
+
+## Development
+
+### Rust
+
+```bash
+# Build and run
+just run
+
+# Send a test alert to the running service
+just test-alert
+```
+
+### Docker
+
+```bash
+just docker-build            # Build image tagged :latest
+just docker-build 1.2.3      # Build image with a specific tag
+just docker-push 1.2.3       # Push to the registry
+just docker-release 1.2.3    # Build + push in one step
+```
+
+
+### Helm
+
+```bash
+# Lint / dry-run (no cluster needed)
+just helm-lint
+just helm-template
+
+# Install into the default namespace
+just helm-install
+
+# Upgrade an existing release
+just helm-upgrade
+
+# Uninstall
+just helm-uninstall
+```
+
+---
 
 ## License
 

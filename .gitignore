@@ -6,3 +6,4 @@ deploy/charts/charts/*.tgz
 .DS_Store
 charts/notification-service/values-testing.yaml
 notification-service-*.tgz
+target

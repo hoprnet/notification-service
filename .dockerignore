@@ -1,13 +1,21 @@
-.dockerignore
-node_modules
-lib
-Dockerfile
-.git
+# Rust build artefacts — the Docker builder compiles from source inside the container
+target/
+
+# Version control and IDE
+.git/
 .gitignore
-test
-nodemon.json
+.vscode/
+.github/
+
+# Documentation and config not needed at runtime
+*.md
+justfile
+Makefile
+charts/
+
+# Test data
+test/
+
+# Secrets / local overrides
 .env
-.vscode
-.npmrc
-*.map
-*.ts
+.env.*

@@ -1,0 +1,13 @@
+{
+  "id": "alert-001",
+  "name": "High CPU Usage",
+  "severity": "critical",
+  "message": "CPU usage has exceeded 90% for more than 5 minutes on node-01.",
+  "source": "monitoring",
+  "labels": {
+    "environment": "production",
+    "service": "api-gateway",
+    "node": "node-01",
+    "region": "eu-west-1"
+  }
+}
