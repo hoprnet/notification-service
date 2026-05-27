@@ -7,6 +7,7 @@ use tower_http::cors::CorsLayer;
 use tracing_subscriber::EnvFilter;
 
 mod config;
+mod formatter;
 mod models;
 mod output;
 mod processing;

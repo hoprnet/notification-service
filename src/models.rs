@@ -1,79 +1,156 @@
 use chrono::{DateTime, Utc};
 use serde::Serialize;
-use std::collections::HashMap;
 
 // ---------------------------------------------------------------------------
-// Alert — extracted from any arbitrary JSON payload
+// Sub-structs
 // ---------------------------------------------------------------------------
 
-/// Well-known fields extracted from an incoming alert payload.
+/// Fields extracted from the `labels` object.  All are optional — present
+/// fields are shown in the Zulip message; absent ones are silently skipped.
+#[derive(Debug, Serialize, Clone)]
+pub struct AlertLabels {
+    pub pod: Option<String>,
+    pub reason: Option<String>,
+    pub container: Option<String>,
+    /// `labels.label_app_kubernetes_io_name`
+    pub app_name: Option<String>,
+}
+
+/// Fields extracted from the `annotations` object.
+#[derive(Debug, Serialize, Clone)]
+pub struct AlertAnnotations {
+    pub summary: Option<String>,
+    pub runbook_url: Option<String>,
+}
+
+// ---------------------------------------------------------------------------
+// Alert — validated extraction from an arbitrary JSON payload
+// ---------------------------------------------------------------------------
+
+/// Alert fields validated and extracted from an incoming JSON payload.
 ///
-/// The service accepts **any** JSON object.  Only these fields are extracted;
-/// everything else in the payload is silently ignored.
+/// The service accepts **any** JSON object at `POST /alerts`.
+/// `Alert::from_value` extracts the fields below and returns an error listing
+/// every required field that is absent or has an unexpected type.
+///
+/// Fields not listed here are silently ignored.
 #[derive(Debug, Serialize, Clone)]
 pub struct Alert {
-    pub id: Option<String>,
-    pub name: Option<String>,
-    pub status: Option<String>,
-    pub severity: Option<String>,
-    /// Short human-readable message (may be absent or null).
-    pub message: Option<String>,
-    /// Longer description — preferred over `message` when formatting output.
+    // ── Required ─────────────────────────────────────────────────────────────
+    pub id: String,
+    pub name: String,
+    pub status: String,
+    pub severity: String,
+    /// Raw timestamp string from `startedAt`.
+    pub started_at: String,
+    /// Raw timestamp string from `lastReceived`.
+    pub last_received: String,
+    /// Number of times the alert has fired (`firingCounter`).
+    pub firing_counter: u64,
+    pub fingerprint: String,
+    /// `null` when unassigned; the key must be present in the payload.
+    pub assignee: Option<String>,
+    /// Raw timestamp string from `endsAt`.
+    pub ends_at: String,
+    /// Prometheus generator URL (`generatorURL`).
+    pub generator_url: String,
+
+    // ── Optional ─────────────────────────────────────────────────────────────
     pub description: Option<String>,
-    /// Originating system(s).  Keep sends an array; simple clients a string.
-    pub source: Vec<String>,
-    /// Key-value metadata tags.
-    pub labels: HashMap<String, String>,
+    pub labels: AlertLabels,
+    pub annotations: AlertAnnotations,
 }
 
-impl Alert {
-    /// Extract well-known fields from an arbitrary `serde_json::Value`.
-    ///
-    /// Fields that are absent, null, or of an unexpected type are skipped
-    /// without returning an error.
-    pub fn from_value(v: &serde_json::Value) -> Self {
-        Alert {
-            id: v["id"].as_str().map(str::to_string),
-            name: v["name"].as_str().map(str::to_string),
-            status: v["status"].as_str().map(str::to_string),
-            severity: v["severity"].as_str().map(str::to_string),
-            message: v["message"].as_str().map(str::to_string),
-            description: v["description"].as_str().map(str::to_string),
-            source: extract_source(&v["source"]),
-            labels: extract_labels(&v["labels"]),
+// ---------------------------------------------------------------------------
+// Extraction helpers
+// ---------------------------------------------------------------------------
+
+/// Extract a required non-null string; record the JSON-pointer path on failure.
+fn req_str(v: &serde_json::Value, path: &str, missing: &mut Vec<String>) -> Option<String> {
+    match v.pointer(path) {
+        Some(serde_json::Value::String(s)) => Some(s.clone()),
+        _ => {
+            missing.push(path.to_string());
+            None
         }
     }
+}
 
-    /// Return the most descriptive text available:
-    /// `description` → `message` → `"(no description)"`.
-    pub fn summary(&self) -> &str {
-        self.description
-            .as_deref()
-            .or(self.message.as_deref())
-            .unwrap_or("(no description)")
+/// Extract a required non-null unsigned integer; record the path on failure.
+fn req_u64(v: &serde_json::Value, path: &str, missing: &mut Vec<String>) -> Option<u64> {
+    match v.pointer(path).and_then(|val| val.as_u64()) {
+        Some(n) => Some(n),
+        None => {
+            missing.push(path.to_string());
+            None
+        }
     }
 }
 
-/// Handle `source` as either a plain string or an array of strings.
-fn extract_source(v: &serde_json::Value) -> Vec<String> {
-    match v {
-        serde_json::Value::String(s) => vec![s.clone()],
-        serde_json::Value::Array(arr) => arr
-            .iter()
-            .filter_map(|x| x.as_str().map(str::to_string))
-            .collect(),
-        _ => vec![],
-    }
+/// Extract an optional string — absent or non-string → `None`, no error.
+fn opt_str(v: &serde_json::Value, path: &str) -> Option<String> {
+    v.pointer(path)
+        .and_then(|val| val.as_str())
+        .map(str::to_string)
 }
 
-/// Extract string-valued entries from a JSON object; skip non-string values.
-fn extract_labels(v: &serde_json::Value) -> HashMap<String, String> {
-    match v.as_object() {
-        Some(obj) => obj
-            .iter()
-            .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
-            .collect(),
-        None => HashMap::new(),
+// ---------------------------------------------------------------------------
+// Alert::from_value
+// ---------------------------------------------------------------------------
+
+impl Alert {
+    /// Validate and extract well-known fields from an arbitrary JSON value.
+    ///
+    /// # Errors
+    /// Returns `Err(missing)` where `missing` is the list of JSON-pointer paths
+    /// for every required field that was absent or had an unexpected type.
+    pub fn from_value(v: &serde_json::Value) -> Result<Self, Vec<String>> {
+        let mut missing: Vec<String> = Vec::new();
+
+        // ── Required fields ──────────────────────────────────────────────────
+        let id            = req_str(v, "/id",            &mut missing);
+        let name          = req_str(v, "/name",          &mut missing);
+        let status        = req_str(v, "/status",        &mut missing);
+        let severity      = req_str(v, "/severity",      &mut missing);
+        let started_at    = req_str(v, "/startedAt",     &mut missing);
+        let last_received = req_str(v, "/lastReceived",  &mut missing);
+        let fingerprint   = req_str(v, "/fingerprint",   &mut missing);
+        let ends_at       = req_str(v, "/endsAt",        &mut missing);
+        let generator_url = req_str(v, "/generatorURL",  &mut missing);
+        let firing_counter = req_u64(v, "/firingCounter", &mut missing);
+
+        // `assignee` must be present as a key but may be null
+        let assignee = opt_str(v, "/assignee");
+
+        if !missing.is_empty() {
+            return Err(missing);
+        }
+
+        // ── Optional fields ──────────────────────────────────────────────────
+        Ok(Alert {
+            id:            id.unwrap(),
+            name:          name.unwrap(),
+            status:        status.unwrap(),
+            severity:      severity.unwrap(),
+            started_at:    started_at.unwrap(),
+            last_received: last_received.unwrap(),
+            firing_counter: firing_counter.unwrap(),
+            fingerprint:   fingerprint.unwrap(),
+            assignee,
+            ends_at:       ends_at.unwrap(),
+            generator_url: generator_url.unwrap(),
+            description:   opt_str(v, "/description"),
+            labels: AlertLabels {
+                pod:       opt_str(v, "/labels/pod"),
+                reason:    opt_str(v, "/labels/reason"),
+                container: opt_str(v, "/labels/container"),
+                app_name:  opt_str(v, "/labels/label_app_kubernetes_io_name"),
+            },
+            annotations: AlertAnnotations {
+                summary:     opt_str(v, "/annotations/summary"),
+                runbook_url: opt_str(v, "/annotations/runbook_url"),
+            },
+        })
     }
 }
 
