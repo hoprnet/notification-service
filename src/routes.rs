@@ -27,7 +27,11 @@ pub async fn receive_alert(
     let alert = match Alert::from_value(&payload) {
         Ok(a) => a,
         Err(missing) => {
-            tracing::warn!(fields = ?missing, "Rejected alert: missing required fields");
+            tracing::warn!(
+                fields  = ?missing,
+                payload = %payload,
+                "Rejected alert: missing required fields"
+            );
             return (
                 StatusCode::UNPROCESSABLE_ENTITY,
                 Json(json!({
