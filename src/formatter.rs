@@ -61,26 +61,34 @@ pub fn to_markdown(alert: &Alert, config: &Config) -> String {
     // ── Annotations summary (short, italic) ───────────────────────────────────
     if let Some(summary) = &alert.annotations.summary {
         writeln!(out).unwrap();
-        writeln!(out, "*{}*", summary).unwrap();
+        writeln!(out, "{}", summary).unwrap();
     }
 
     // ── Description ───────────────────────────────────────────────────────────
-    if let Some(desc) = &alert.description {
+    if let Some(description) = &alert.description {
         let same_as_summary = alert
             .annotations
             .summary
             .as_deref()
-            .map(|s| s == desc.as_str())
+            .map(|s| s == description.as_str())
             .unwrap_or(false);
 
         if !same_as_summary {
             writeln!(out).unwrap();
-            writeln!(out, "{}", desc).unwrap();
+            writeln!(out, "**Description:** {}", description).unwrap();
         }
     }
 
+
+    // ── Root cause analysis ───────────────────────────────────────────────────
+    if let Some(rca) = &alert.rca_summary {
+        writeln!(out).unwrap();
+        writeln!(out, "**Root cause analysis:** {}", rca).unwrap();
+    }
+
+
     // ── Bullet list ───────────────────────────────────────────────────────────
-    writeln!(out).unwrap();
+    writeln!(out, "**Details:**").unwrap();
 
     if let Some(app) = &alert.labels.app_name {
         writeln!(out, "- **Application:** `{}`", app).unwrap();
@@ -239,6 +247,9 @@ mod tests {
             zulip_host: String::new(),
             zulip_default_stream: String::new(),
             zulip_namespace_streams: std::collections::HashMap::new(),
+            zulip_enabled: false,
+            message_ttl_days: 7,
+            zulip_request_timeout_secs: 10,
         }
     }
 
@@ -256,6 +267,7 @@ mod tests {
             ends_at: "2026-01-01T02:00:00Z".into(),
             generator_url: "http://prometheus/graph".into(),
             description: None,
+            rca_summary: None,
             namespace: Some("monitoring".into()),
             labels: AlertLabels {
                 pod: Some("my-pod".into()),
@@ -362,6 +374,21 @@ mod tests {
         // make_alert has app_name = None
         let msg = to_markdown(&make_alert("firing", "warning"), &config);
         assert!(!msg.contains("Graylog"));
+    }
+
+    #[test]
+    fn rca_summary_shown_when_present() {
+        let mut alert = make_alert("firing", "critical");
+        alert.rca_summary = Some("Memory leak in the connection pool introduced in v1.4.2.".into());
+        let msg = to_markdown(&alert, &make_config(""));
+        assert!(msg.contains("**Root cause analysis**"));
+        assert!(msg.contains("Memory leak in the connection pool introduced in v1.4.2."));
+    }
+
+    #[test]
+    fn rca_summary_hidden_when_absent() {
+        let msg = to_markdown(&make_alert("firing", "warning"), &make_config(""));
+        assert!(!msg.contains("Root cause analysis"));
     }
 
     #[test]

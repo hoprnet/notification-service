@@ -53,6 +53,11 @@ test-alert file="test/KubePodCrashLooping-01.json":
 
 registry := "europe-west3-docker.pkg.dev/hoprassociation/docker-images/notification-service"
 
+# Authenticate Docker and Helm against the GCP Artifact Registry
+registry-login:
+    gcloud auth configure-docker europe-west3-docker.pkg.dev
+    gcloud auth application-default print-access-token | helm registry login -u oauth2accesstoken --password-stdin https://europe-west3-docker.pkg.dev
+
 # Build Docker image (version defaults to "latest")
 docker-build version="latest":
     docker build -t {{registry}}:{{version}} .
@@ -96,5 +101,5 @@ helm-package:
     helm package {{chart_dir}}
 
 # Package and push to an OCI registry
-helm-publish registry version: helm-package
-    helm push notification-service-*.tgz oci://{{registry}}
+helm-publish: helm-package
+    helm push notification-service-*.tgz oci://europe-west3-docker.pkg.dev/hoprassociation/helm-charts

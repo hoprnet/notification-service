@@ -57,6 +57,9 @@ pub struct Alert {
 
     // ── Optional ─────────────────────────────────────────────────────────────
     pub description: Option<String>,
+    /// Free-text root cause analysis summary (`rca_summary`).
+    /// Rendered as a dedicated section in the Zulip message when present.
+    pub rca_summary: Option<String>,
     /// Kubernetes namespace the alert originated from.
     /// Used to route the notification to the correct Zulip stream.
     pub namespace: Option<String>,
@@ -162,6 +165,7 @@ impl Alert {
             ends_at: ends_at.unwrap(),
             generator_url: generator_url.unwrap(),
             description: opt_str(v, "/description"),
+            rca_summary: opt_str(v, "/rca_summary"),
             namespace: opt_str(v, "/namespace"),
             labels: AlertLabels {
                 pod: opt_str(v, "/labels/pod"),
