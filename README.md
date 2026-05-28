@@ -19,20 +19,8 @@ Alert sources   │   POST /alerts                                 │
 ```bash
 curl -X POST http://localhost:8080/alerts \
   -H "Content-Type: application/json" \
-  -d @test/alert-notification.json
+  -d @test/KubePodCrashLooping-01.json
 ```
-
----
-
-## Configuration
-
-| Environment variable | Default | Description |
-|---|---|---|
-| `PORT` | `8080` | TCP port the HTTP server listens on |
-| `RUST_LOG` | `info` | Log level filter (`debug`, `info`, `warn`, `error`) |
-| `ZULIP_EMAIL` | — | Zulip bot e-mail address (API authentication) |
-| `ZULIP_API_KEY` | — | Zulip bot API key |
-| `ZULIP_HOST` | — | Zulip server hostname (e.g. `yourorg.zulipchat.com`) |
 
 ---
 
@@ -41,6 +29,9 @@ curl -X POST http://localhost:8080/alerts \
 ### Rust
 
 ```bash
+# Set environment variables
+cp .env.example .env
+
 # Build and run
 just run
 
@@ -53,8 +44,8 @@ just test-alert
 ```bash
 just docker-build            # Build image tagged :latest
 just docker-build 1.2.3      # Build image with a specific tag
+just docker-push             # Push to the registry :latest
 just docker-push 1.2.3       # Push to the registry
-just docker-release 1.2.3    # Build + push in one step
 ```
 
 

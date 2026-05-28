@@ -1,31 +1,59 @@
-use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use axum::{
+    extract::State,
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    Json,
+};
 use serde_json::json;
-use std::sync::Arc;
 
-use crate::{config::Config, models::Alert, output, processing};
+use crate::{models::Alert, output, processing, AppState};
 
-/// `POST /alerts` — receive an alert payload, enrich it, and dispatch it.
+/// `POST /alerts` — receive any JSON alert payload, validate required fields,
+/// enrich the alert, and dispatch it.
 ///
 /// # Request
-/// JSON body matching [`Alert`].
+/// Any valid JSON object.  Required fields are validated after parsing;
+/// unknown fields are silently ignored.
 ///
-/// # Response
-/// - `200 OK` — alert was accepted and processed successfully.
-/// - `422 Unprocessable Entity` — request body is invalid or missing required fields.
+/// # Responses
+/// - `200 OK` — alert accepted and processed.
+/// - `422 Unprocessable Entity` — JSON is valid but one or more required
+///   fields are absent or have an unexpected type.  The response body lists
+///   every missing field path.
 pub async fn receive_alert(
-    State(config): State<Arc<Config>>,
-    Json(alert): Json<Alert>,
-) -> impl IntoResponse {
+    State(state): State<AppState>,
+    Json(payload): Json<serde_json::Value>,
+) -> Response {
+    let alert = match Alert::from_value(&payload) {
+        Ok(a) => a,
+        Err(missing) => {
+            tracing::warn!(
+                fields  = ?missing,
+                payload = %payload,
+                "Rejected alert: missing required fields"
+            );
+            return (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                Json(json!({
+                    "error": "missing required fields",
+                    "fields": missing,
+                })),
+            )
+                .into_response();
+        }
+    };
+
     tracing::info!(
-        id = %alert.id,
-        name = %alert.name,
-        severity = %alert.severity,
-        source = %alert.source,
+        id        = %alert.id,
+        name      = %alert.name,
+        status    = %alert.status,
+        severity  = %alert.severity,
+        namespace = ?alert.namespace,
         "Received alert"
     );
 
     let enriched = processing::enrich(alert);
-    output::send(&enriched, &config);
+    output::send(&enriched, &state.config, &state.messages).await;
 
     (
         StatusCode::OK,
@@ -34,4 +62,5 @@ pub async fn receive_alert(
             "id": enriched.alert.id,
         })),
     )
+        .into_response()
 }

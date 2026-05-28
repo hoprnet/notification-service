@@ -1,0 +1,21 @@
+keep:
+  baseUrl: "https://incidents.staging.hoprnet.link"
+
+graylog:
+  baseUrl: "https://graylog.staging.hoprnet.link/search/6967936aebec834bbd02fe1e?q="
+
+environment:
+  name: "staging"
+
+zulip:
+  email: "github-bot@hopr.zulipchat.com"
+  apiKey: ""
+  host: "hopr.zulipchat.com"
+  defaultStream: "Alerts"
+  namespaceStreams:
+    blokli: "Blokli"
+    ctdapp: "Hoprd"
+    core-team: "Hoprd"
+    webapi-hoprnet-org: "Products"
+    network-hoprnet-org: "Products"
+    hose: "Hoprd"

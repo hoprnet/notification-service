@@ -1,6 +1,6 @@
 [package]
 name = "notification-service"
-version = "0.1.0"
+version = "1.2.0"
 edition = "2021"
 
 [[bin]]
@@ -16,3 +16,5 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 chrono = { version = "0.4", features = ["serde"] }
 tower-http = { version = "0.5", features = ["cors", "trace"] }
+# rustls-tls avoids an OpenSSL dependency — required for static musl builds on Alpine.
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }

@@ -3,6 +3,11 @@
 #
 # Install: cargo install just  or  brew install just
 # Usage:   just <recipe>
+#
+# Environment variables are loaded automatically from .env when present.
+# Copy .env.example to .env and fill in your values.
+
+set dotenv-load
 
 # Default: list all available recipes
 default:
@@ -38,15 +43,20 @@ lint:
 check:
     cargo check
 
-# Send a test alert to a locally running instance
-test-alert:
+# Send a test alert to a locally running instance (pass file= to override)
+test-alert file="test/KubePodCrashLooping-01.json":
     curl -s -X POST http://localhost:8080/alerts \
       -H "Content-Type: application/json" \
-      -d @test/alert-notification.json | jq .
+      -d @{{file}} | jq .
 
 # ── Docker ────────────────────────────────────────────────────────────────────
 
 registry := "europe-west3-docker.pkg.dev/hoprassociation/docker-images/notification-service"
+
+# Authenticate Docker and Helm against the GCP Artifact Registry
+registry-login:
+    gcloud auth configure-docker europe-west3-docker.pkg.dev
+    gcloud auth application-default print-access-token | helm registry login -u oauth2accesstoken --password-stdin https://europe-west3-docker.pkg.dev
 
 # Build Docker image (version defaults to "latest")
 docker-build version="latest":
@@ -56,9 +66,6 @@ docker-build version="latest":
 docker-push version="latest":
     docker push {{registry}}:{{version}}
 
-# Build and push in one step
-docker-release version: (docker-build version) (docker-push version)
-
 # ── Helm ──────────────────────────────────────────────────────────────────────
 
 chart_dir := "charts/notification-service"
@@ -67,19 +74,22 @@ chart_dir := "charts/notification-service"
 helm-lint:
     helm lint {{chart_dir}}
 
-# Render the Helm templates (dry-run, no cluster needed)
+# Render the Helm templates using the staging values (dry-run, no cluster needed)
 helm-template:
-    helm template notification-service {{chart_dir}}
+    helm template notification-service {{chart_dir}} \
+      -f {{chart_dir}}/values-staging.yaml
 
 # Install the chart into a namespace (default: "default")
 helm-install namespace="default":
     helm install notification-service {{chart_dir}} \
+      -f {{chart_dir}}/values-staging.yaml \
       --namespace {{namespace}} \
       --create-namespace
 
 # Upgrade an existing Helm release
 helm-upgrade namespace="default":
     helm upgrade notification-service {{chart_dir}} \
+      -f {{chart_dir}}/values-staging.yaml \
       --namespace {{namespace}}
 
 # Uninstall the Helm release
@@ -91,5 +101,5 @@ helm-package:
     helm package {{chart_dir}}
 
 # Package and push to an OCI registry
-helm-publish registry version: helm-package
-    helm push notification-service-*.tgz oci://{{registry}}
+helm-publish: helm-package
+    helm push notification-service-*.tgz oci://europe-west3-docker.pkg.dev/hoprassociation/helm-charts

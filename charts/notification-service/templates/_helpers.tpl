@@ -62,8 +62,15 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Name of the Secret that holds Zulip credentials.
+Name of the Secret that holds sensitive credentials (Zulip email + API key).
 */}}
-{{- define "notification-service.zulipSecretName" -}}
-{{- include "notification-service.fullname" . }}-zulip
+{{- define "notification-service.credentialsSecretName" -}}
+{{- include "notification-service.fullname" . }}-credentials
+{{- end }}
+
+{{/*
+Name of the ConfigMap that holds non-sensitive runtime configuration.
+*/}}
+{{- define "notification-service.configMapName" -}}
+{{- include "notification-service.fullname" . }}-config
 {{- end }}

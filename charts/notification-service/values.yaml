@@ -122,13 +122,51 @@ tolerations: []
 
 affinity: {}
 
+# Keep alert management platform configuration.
+# KEEP_BASE_URL is used to build per-alert deep-links in Zulip messages.
+# Example: https://incidents.staging.hoprnet.link
+keep:
+  # Base URL of the Keep instance (no trailing slash).
+  baseUrl: ""
+
+# Graylog log search configuration.
+# GRAYLOG_BASE_URL must include the saved-search path and trailing ?q=
+# Example: https://graylog.staging.hoprnet.link/search/<id>?q=
+# Leave empty to omit the Graylog link from Zulip messages.
+graylog:
+  baseUrl: ""
+
+# Logical environment name injected into the pod as ENVIRONMENT_NAME.
+# Used to build the Zulip topic: alerts-<environmentName>.
+# Example: staging, production
+environment:
+  name: ""
+
 # Zulip output configuration.
-# These values are stored in a Kubernetes Secret and injected into the container
-# as environment variables (ZULIP_EMAIL, ZULIP_API_KEY, ZULIP_HOST).
+# Non-sensitive values (enabled, host, defaultStream, namespaceStreams,
+# messageTtlDays, requestTimeoutSecs) are stored in the ConfigMap and injected
+# as environment variables.
+# Sensitive credentials (email, apiKey) are stored in the Secret.
 zulip:
+  # Set to false to disable all Zulip API calls (dry-run mode). Defaults to true.
+  enabled: true
+  # Days before an idle fingerprint→message-ID entry is evicted from the store.
+  # After eviction the next alert for that fingerprint opens a fresh Zulip message.
+  messageTtlDays: 7
+  # Timeout in seconds for outbound Zulip HTTP requests. Defaults to 10.
+  requestTimeoutSecs: 10
   # Zulip bot e-mail address (used for API authentication).
   email: ""
   # Zulip bot API key.
   apiKey: ""
   # Zulip server hostname, e.g. yourorg.zulipchat.com
   host: ""
+  # Stream used when the alert namespace has no explicit mapping.
+  defaultStream: ""
+  # Map of Kubernetes namespace → Zulip stream name.
+  # Alerts from unlisted namespaces fall back to defaultStream.
+  # Example:
+  #   namespaceStreams:
+  #     monitoring: devops-alerts
+  #     production: prod-alerts
+  namespaceStreams: {}

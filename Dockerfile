@@ -40,9 +40,14 @@ RUN addgroup -S app && adduser -S app -G app
 COPY --from=builder /app/target/release/notification-service /app/notification-service
 
 ENV PORT=8080
+ENV KEEP_BASE_URL=""
+ENV GRAYLOG_BASE_URL=""
+ENV ENVIRONMENT_NAME=""
 ENV ZULIP_EMAIL=""
 ENV ZULIP_API_KEY=""
 ENV ZULIP_HOST=""
+ENV ZULIP_DEFAULT_STREAM=""
+ENV ZULIP_NAMESPACE_STREAMS="{}"
 EXPOSE ${PORT}
 
 USER app
