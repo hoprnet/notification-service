@@ -102,4 +102,4 @@ helm-package:
 
 # Package and push to an OCI registry
 helm-publish: helm-package
-    helm push notification-service-*.tgz oci://europe-west3-docker.pkg.dev/hoprassociation/helm-charts
+    helm push notification-service-$(grep '^version:' {{chart_dir}}/Chart.yaml| awk '{print $2}').tgz oci://europe-west3-docker.pkg.dev/hoprassociation/helm-charts
