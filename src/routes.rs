@@ -8,6 +8,27 @@ use serde_json::json;
 
 use crate::{models::Alert, output, processing, AppState};
 
+/// `POST /incident` — receive a Keep incident payload.
+///
+/// The incident payload schema is not yet defined.  This handler accepts any
+/// valid JSON, logs the raw body at INFO level so the fields can be inspected,
+/// and returns `200 OK`.  Once the schema is known, replace this stub with
+/// a proper model, formatter, and Zulip dispatch (mirroring `receive_alert`).
+///
+/// # Responses
+/// - `200 OK` — payload accepted (always, as long as it is valid JSON).
+/// - `422 Unprocessable Entity` — body is not valid JSON.
+pub async fn receive_incident(
+    Json(payload): Json<serde_json::Value>,
+) -> Response {
+    tracing::info!(payload = %payload, "Received incident");
+    (
+        StatusCode::OK,
+        Json(json!({ "status": "received" })),
+    )
+        .into_response()
+}
+
 /// `POST /alerts` — receive any JSON alert payload, validate required fields,
 /// enrich the alert, and dispatch it.
 ///
