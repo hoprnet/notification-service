@@ -20,6 +20,8 @@ use crate::{config::Config, models::Alert};
 /// - **Reason:** `…`                       ← only shown when present
 /// - **Pod:** `…`
 /// - **Container:** `…`
+/// - **Start time:** `…`              ← UTC ISO 8601
+/// - **End time:** `…`                ← only shown when present, UTC ISO 8601
 ///
 /// 📊 [Prometheus](…)  · 📖 [Runbook](…) ← Runbook only when present
 /// ```
@@ -118,10 +120,22 @@ pub fn to_markdown(alert: &Alert, config: &Config) -> String {
         writeln!(out, "- **Correlated alerts:** [{}]({})", parent_name, url).unwrap();
     }
 
+    if let Some(ts) = parse_datetime_to_iso(&alert.started_at) {
+        writeln!(out, "- **Start time:** {}", ts).unwrap();
+    }
+    if let Some(ref ends_at) = alert.ends_at {
+        if let Some(ts) = parse_datetime_to_iso(ends_at) {
+            writeln!(out, "- **End time:** {}", ts).unwrap();
+        }
+    }
+
     // ── Footer links ──────────────────────────────────────────────────────────
     writeln!(out).unwrap();
 
-    let mut footer: Vec<String> = vec![format!("📊 [Prometheus]({})", alert.generator_url)];
+    let mut footer: Vec<String> = Vec::new();
+    if let Some(ref generator_url) = alert.generator_url {
+        footer.push(format!("📊 [Prometheus]({})", generator_url));
+    }
     if let Some(runbook_url) = &alert.annotations.runbook_url {
         footer.push(format!("📖 [Runbook]({})", runbook_url));
     }
@@ -271,8 +285,8 @@ mod tests {
             firing_counter: 3,
             fingerprint: "abc123def456".into(),
             assignee: None,
-            ends_at: "2026-01-01T02:00:00Z".into(),
-            generator_url: "http://prometheus/graph".into(),
+            ends_at: Some("2026-01-01T02:00:00Z".into()),
+            generator_url: Some("http://prometheus/graph".into()),
             description: None,
             rca_summary: None,
             correlated_parent_alert: None,

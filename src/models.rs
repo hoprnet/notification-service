@@ -51,9 +51,9 @@ pub struct Alert {
     /// `null` when unassigned; the key must be present in the payload.
     pub assignee: Option<String>,
     /// Raw timestamp string from `endsAt`.
-    pub ends_at: String,
+    pub ends_at: Option<String>,
     /// Prometheus generator URL (`generatorURL`).
-    pub generator_url: String,
+    pub generator_url: Option<String>,
 
     // ── Optional ─────────────────────────────────────────────────────────────
     pub description: Option<String>,
@@ -145,8 +145,8 @@ impl Alert {
         let started_at = req_str(v, "/startedAt", &mut missing);
         let last_received = req_str(v, "/lastReceived", &mut missing);
         let fingerprint = req_str(v, "/fingerprint", &mut missing);
-        let ends_at = req_str(v, "/endsAt", &mut missing);
-        let generator_url = req_str(v, "/generatorURL", &mut missing);
+        let ends_at = opt_str(v, "/endsAt");
+        let generator_url = opt_str(v, "/generatorURL");
         let firing_counter = req_u64(v, "/firingCounter", &mut missing);
 
         // `assignee` must be present as a key but its value may be null.
@@ -168,8 +168,8 @@ impl Alert {
             firing_counter: firing_counter.unwrap(),
             fingerprint: fingerprint.unwrap(),
             assignee,
-            ends_at: ends_at.unwrap(),
-            generator_url: generator_url.unwrap(),
+            ends_at,
+            generator_url,
             description: opt_str(v, "/description"),
             rca_summary: opt_str(v, "/rca_summary"),
             correlated_parent_alert: opt_str(v, "/correlated_parent_alert"),
