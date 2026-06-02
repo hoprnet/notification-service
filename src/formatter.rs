@@ -172,6 +172,12 @@ pub fn incident_to_markdown(incident: &Incident) -> String {
     let mut out = String::new();
 
     let severity = incident.severity.as_deref().unwrap_or("unknown");
+    // Keep sends Python enum repr e.g. "IncidentStatus.FIRING" — normalise to "firing".
+    let status = incident
+        .status
+        .as_deref()
+        .map(|s| s.split('.').last().unwrap_or(s).to_lowercase())
+        .unwrap_or_else(|| "unknown".to_string());
 
     writeln!(out, "{} **{}**", severity_emoji(severity), incident.topic_name).unwrap();
 
@@ -189,6 +195,7 @@ pub fn incident_to_markdown(incident: &Incident) -> String {
     }
 
     writeln!(out, "- **Severity:** `{}`", severity).unwrap();
+    writeln!(out, "- **Status:** `{}`", status).unwrap();
 
     if let Some(count) = incident.alerts_count {
         writeln!(out, "- **Alerts:** `{}`", count).unwrap();

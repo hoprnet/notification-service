@@ -234,7 +234,9 @@ impl Incident {
             description: opt_str(v, "/description"),
             assignee: opt_str(v, "/assignee"),
             severity: opt_str(v, "/severity"),
-            alerts_count: v.pointer("/alerts_count").and_then(|val| val.as_u64()),
+            alerts_count: v.pointer("/alerts_count").and_then(|val| {
+                val.as_u64().or_else(|| val.as_str().and_then(|s| s.parse().ok()))
+            }),
             linear_id: opt_str(v, "/linear_id"),
             linear_url: opt_str(v, "/linear_url"),
             namespace: opt_str(v, "/namespace"),
