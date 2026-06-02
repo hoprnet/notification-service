@@ -170,3 +170,9 @@ zulip:
   #     monitoring: devops-alerts
   #     production: prod-alerts
   namespaceStreams: {}
+
+rust:
+  # RUST_LOG sets the log level for the notification service. Defaults to "info".
+  log: "info"
+  # RUST_BACKTRACE sets the backtrace mode for the notification service. Defaults to "full".
+  backtrace: "full"

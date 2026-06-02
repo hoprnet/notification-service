@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use chrono::{DateTime, NaiveDateTime, Utc};
 
-use crate::{config::Config, models::Alert};
+use crate::{config::Config, models::{Alert, Incident}};
 
 /// Render an [`Alert`] as a Zulip-flavoured Markdown message.
 ///
@@ -148,6 +148,72 @@ pub fn to_markdown(alert: &Alert, config: &Config) -> String {
 }
 
 // ---------------------------------------------------------------------------
+// Incident formatter
+// ---------------------------------------------------------------------------
+
+/// Render a Keep [`Incident`] as a Zulip-flavoured Markdown message.
+///
+/// # Layout
+/// Topic: `[inc] {severity_emoji} {topic_name}`
+///
+/// ```text
+/// {severity_emoji} **{topic_name}**
+///
+/// {description}                    ← if present
+///
+/// **Details:**
+/// - **Assignee:** …
+/// - **Severity:** …
+/// - **Alerts:** N
+/// - **Namespace:** `…`              ← only when present
+/// - **Linear:** […](…)       ← only when linear_url is present
+/// ```
+pub fn incident_to_markdown(incident: &Incident) -> String {
+    let mut out = String::new();
+
+    let severity = incident.severity.as_deref().unwrap_or("unknown");
+    // Keep sends Python enum repr e.g. "IncidentStatus.FIRING" — normalise to "firing".
+    let status = incident
+        .status
+        .as_deref()
+        .map(|s| s.split('.').last().unwrap_or(s).to_lowercase())
+        .unwrap_or_else(|| "unknown".to_string());
+
+    writeln!(out, "{} **{}**", severity_emoji(severity), incident.topic_name).unwrap();
+
+    if let Some(summary) = &incident.description {
+        writeln!(out).unwrap();
+        writeln!(out, "{}", strip_html(summary)).unwrap();
+    }
+
+    writeln!(out).unwrap();
+    writeln!(out, "**Details:**").unwrap();
+
+    match &incident.assignee {
+        Some(a) if !a.is_empty() => writeln!(out, "- **Assignee:** `{}`", a).unwrap(),
+        _ => writeln!(out, "- **Assignee:** —").unwrap(),
+    }
+
+    writeln!(out, "- **Severity:** `{}`", severity).unwrap();
+    writeln!(out, "- **Status:** `{}`", status).unwrap();
+
+    if let Some(count) = incident.alerts_count {
+        writeln!(out, "- **Alerts:** `{}`", count).unwrap();
+    }
+
+    if let Some(ns) = &incident.namespace {
+        writeln!(out, "- **Namespace:** `{}`", ns).unwrap();
+    }
+
+    if let Some(url) = &incident.linear_url {
+        let label = incident.linear_id.as_deref().unwrap_or("Issue");
+        writeln!(out, "- **Linear**: [{}]({})", label, url).unwrap();
+    }
+
+    out
+}
+
+// ---------------------------------------------------------------------------
 // Graylog URL builder
 // ---------------------------------------------------------------------------
 
@@ -228,7 +294,7 @@ fn url_encode_timestamp(s: &str) -> String {
 // Emoji helpers
 // ---------------------------------------------------------------------------
 
-fn severity_emoji(severity: &str) -> &'static str {
+pub fn severity_emoji(severity: &str) -> &'static str {
     match severity.to_lowercase().as_str() {
         "critical" => "🔴",
         "warning" => "🟡",
@@ -246,6 +312,27 @@ fn status_emoji(status: &str) -> &'static str {
         "suppressed" => "🔕",
         _ => "❓",
     }
+}
+
+// ---------------------------------------------------------------------------
+// HTML stripper
+// ---------------------------------------------------------------------------
+
+/// Remove HTML tags from a string, leaving only the inner text.
+/// Consecutive whitespace is collapsed to a single space and the result is trimmed.
+fn strip_html(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut in_tag = false;
+    for ch in s.chars() {
+        match ch {
+            '<' => in_tag = true,
+            '>' => in_tag = false,
+            _ if !in_tag => out.push(ch),
+            _ => {}
+        }
+    }
+    // Collapse runs of whitespace (including newlines from block elements).
+    out.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 // ---------------------------------------------------------------------------

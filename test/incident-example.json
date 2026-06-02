@@ -1,0 +1,16 @@
+{
+  "topic_name": "My first incident",
+  "assignee": "ausias.armesto@hoprnet.org",
+  "description": "The crash-test-app container in the monitoring namespace is stuck in a CrashLoopBackOff state, unable to start for over 20 minutes. Two correlated alerts (KubeContainerWaiting and KubePodCrashLooping) indicate the pod is repeatedly crashing and failing to start.",
+  "severity": "warning",
+  "id": "4ee4a928-7c16-4a18-b2dd-be1e17bb8aa6",
+  "start_time": "2026-05-26T09:06:25.310000",
+  "last_seen_time": "2026-05-26T15:50:25.320000",
+  "end_time": null,
+  "creation_time": "2026-05-26T15:48:47.589085",
+  "alerts_count": 2,
+  "status": "firing",
+  "linear_id": "DEV-77",
+  "linear_url": "https://incidents.staging.hoprnet.link/incidents/4ee4a928-7c16-4a18-b2dd-be1e17bb8aa6/alerts",
+  "namespace": "monitoring"
+}

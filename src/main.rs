@@ -61,6 +61,7 @@ async fn main() {
         .route("/", get(health_check))
         .route("/healthz", get(health_check))
         .route("/alerts", post(routes::receive_alert))
+        .route("/incidents", post(routes::receive_incident))
         .with_state(state)
         .layer(CorsLayer::permissive());
 

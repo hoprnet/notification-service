@@ -14,5 +14,5 @@ kubeVersion: ">=1.24.0-0"
 maintainers:
   - name: Hopr Association
     url: https://hoprnet.org/
-version: 1.2.0
+version: 1.2.1
 appVersion: 1.2.0
