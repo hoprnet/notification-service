@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use chrono::{DateTime, NaiveDateTime, Utc};
 
-use crate::{config::Config, models::Alert};
+use crate::{config::Config, models::{Alert, Incident}};
 
 /// Render an [`Alert`] as a Zulip-flavoured Markdown message.
 ///
@@ -148,6 +148,66 @@ pub fn to_markdown(alert: &Alert, config: &Config) -> String {
 }
 
 // ---------------------------------------------------------------------------
+// Incident formatter
+// ---------------------------------------------------------------------------
+
+/// Render a Keep [`Incident`] as a Zulip-flavoured Markdown message.
+///
+/// # Layout
+/// Topic: `[inc] {severity_emoji} {user_generated_name}`
+///
+/// ```text
+/// {severity_emoji} **{user_generated_name}**
+///
+/// {user_summary}                    ← if present
+///
+/// **Details:**
+/// - **Assignee:** …
+/// - **Severity:** …
+/// - **Alerts:** N
+/// - **Namespace:** `…`              ← only when present
+///
+/// 🔗 [Linear Issue](…)              ← only when incident_url is present
+/// ```
+pub fn incident_to_markdown(incident: &Incident) -> String {
+    let mut out = String::new();
+
+    let severity = incident.severity.as_deref().unwrap_or("unknown");
+
+    writeln!(out, "{} **{}**", severity_emoji(severity), incident.user_generated_name).unwrap();
+
+    if let Some(summary) = &incident.user_summary {
+        writeln!(out).unwrap();
+        writeln!(out, "{}", summary).unwrap();
+    }
+
+    writeln!(out).unwrap();
+    writeln!(out, "**Details:**").unwrap();
+
+    match &incident.assignee {
+        Some(a) if !a.is_empty() => writeln!(out, "- **Assignee:** {}", a).unwrap(),
+        _ => writeln!(out, "- **Assignee:** —").unwrap(),
+    }
+
+    writeln!(out, "- **Severity:** {}", severity).unwrap();
+
+    if let Some(count) = incident.alerts_count {
+        writeln!(out, "- **Alerts:** {}", count).unwrap();
+    }
+
+    if let Some(ns) = &incident.incident_namespace {
+        writeln!(out, "- **Namespace:** `{}`", ns).unwrap();
+    }
+
+    if let Some(url) = &incident.incident_url {
+        let label = incident.incident_id.as_deref().unwrap_or("Issue");
+        writeln!(out, "- **Linear**: [{}]({})", label, url).unwrap();
+    }
+
+    out
+}
+
+// ---------------------------------------------------------------------------
 // Graylog URL builder
 // ---------------------------------------------------------------------------
 
@@ -228,7 +288,7 @@ fn url_encode_timestamp(s: &str) -> String {
 // Emoji helpers
 // ---------------------------------------------------------------------------
 
-fn severity_emoji(severity: &str) -> &'static str {
+pub fn severity_emoji(severity: &str) -> &'static str {
     match severity.to_lowercase().as_str() {
         "critical" => "🔴",
         "warning" => "🟡",

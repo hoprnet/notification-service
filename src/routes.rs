@@ -6,25 +6,55 @@ use axum::{
 };
 use serde_json::json;
 
-use crate::{models::Alert, output, processing, AppState};
+use crate::{models::{Alert, Incident}, output, processing, AppState};
 
-/// `POST /incident` — receive a Keep incident payload.
+/// `POST /incident` — receive a Keep incident payload, format it, and post a
+/// new Zulip topic.
 ///
-/// The incident payload schema is not yet defined.  This handler accepts any
-/// valid JSON, logs the raw body at INFO level so the fields can be inspected,
-/// and returns `200 OK`.  Once the schema is known, replace this stub with
-/// a proper model, formatter, and Zulip dispatch (mirroring `receive_alert`).
+/// Each call always creates a new topic — there is no update/deduplication.
 ///
 /// # Responses
-/// - `200 OK` — payload accepted (always, as long as it is valid JSON).
-/// - `422 Unprocessable Entity` — body is not valid JSON.
+/// - `200 OK` — incident accepted and dispatched.
+/// - `422 Unprocessable Entity` — JSON is valid but required fields are absent.
+/// - `400 Bad Request` — body is not valid JSON.
 pub async fn receive_incident(
+    State(state): State<AppState>,
     Json(payload): Json<serde_json::Value>,
 ) -> Response {
-    tracing::info!(payload = %payload, "Received incident");
+    let incident = match Incident::from_value(&payload) {
+        Ok(i) => i,
+        Err(missing) => {
+            tracing::warn!(
+                fields  = ?missing,
+                payload = %payload,
+                "Rejected incident: missing required fields"
+            );
+            return (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                Json(json!({
+                    "error": "missing required fields",
+                    "fields": missing,
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    tracing::info!(
+        id     = %incident.id,
+        name   = %incident.user_generated_name,
+        status = ?incident.status,
+        "Received incident"
+    );
+
+    output::send_incident(&incident, &state.config).await;
+
     (
         StatusCode::OK,
-        Json(json!({ "status": "received" })),
+        Json(json!({
+            "status": "processed",
+            "id": incident.id,
+        })),
     )
         .into_response()
 }

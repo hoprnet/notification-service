@@ -14,16 +14,6 @@ Alert sources   │   POST /alerts                                 │
                 └────────────────────────────────────────────────┘
 ```
 
-## Test
-
-```bash
-curl -X POST http://localhost:8080/alerts \
-  -H "Content-Type: application/json" \
-  -d @test/KubePodCrashLooping-01.json
-```
-
----
-
 ## Development
 
 ### Rust

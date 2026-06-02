@@ -190,6 +190,60 @@ impl Alert {
 }
 
 // ---------------------------------------------------------------------------
+// Incident — validated extraction from a Keep incident payload
+// ---------------------------------------------------------------------------
+
+/// Incident fields validated and extracted from an incoming Keep incident payload.
+#[derive(Debug, Serialize, Clone)]
+pub struct Incident {
+    pub id: String,
+    /// Used as the Zulip topic name.
+    pub user_generated_name: String,
+    pub user_summary: Option<String>,
+    pub assignee: Option<String>,
+    pub severity: Option<String>,
+    pub alerts_count: Option<u64>,
+    /// Linear issue identifier (e.g. `ENG-123`).
+    pub incident_id: Option<String>,
+    /// Linear issue URL.
+    pub incident_url: Option<String>,
+    /// Kubernetes namespace — used to route to the correct Zulip stream.
+    pub incident_namespace: Option<String>,
+    pub status: Option<String>,
+}
+
+impl Incident {
+    /// Validate and extract well-known fields from an arbitrary JSON value.
+    ///
+    /// # Errors
+    /// Returns `Err(missing)` listing every required field that was absent or
+    /// had an unexpected type.
+    pub fn from_value(v: &serde_json::Value) -> Result<Self, Vec<String>> {
+        let mut missing: Vec<String> = Vec::new();
+
+        let id = req_str(v, "/id", &mut missing);
+        let user_generated_name = req_str(v, "/user_generated_name", &mut missing);
+
+        if !missing.is_empty() {
+            return Err(missing);
+        }
+
+        Ok(Incident {
+            id: id.unwrap(),
+            user_generated_name: user_generated_name.unwrap(),
+            user_summary: opt_str(v, "/user_summary"),
+            assignee: opt_str(v, "/assignee"),
+            severity: opt_str(v, "/severity"),
+            alerts_count: v.pointer("/alerts_count").and_then(|val| val.as_u64()),
+            incident_id: opt_str(v, "/incident_id"),
+            incident_url: opt_str(v, "/incident_url"),
+            incident_namespace: opt_str(v, "/incident_namespace"),
+            status: opt_str(v, "/status"),
+        })
+    }
+}
+
+// ---------------------------------------------------------------------------
 // EnrichedAlert — after processing
 // ---------------------------------------------------------------------------
 

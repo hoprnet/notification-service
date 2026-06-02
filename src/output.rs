@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 
 use serde::Deserialize;
 
-use crate::{config::Config, formatter, message_store::MessageStore, models::EnrichedAlert};
+use crate::{config::Config, formatter, message_store::MessageStore, models::{EnrichedAlert, Incident}};
 
 /// Send or update a Zulip message for the given enriched alert.
 ///
@@ -80,6 +80,39 @@ pub async fn send(alert: &EnrichedAlert, config: &Config, messages: &MessageStor
             }
             Err(e) => tracing::error!(error = %e, fingerprint, "Failed to send Zulip message"),
         }
+    }
+}
+
+/// Post a new Zulip topic for the given incident.
+///
+/// Each call always creates a **new** topic — there is no deduplication.
+/// The topic name is `[inc] {severity_emoji} {user_generated_name}`; the stream is resolved
+/// from `incident.incident_namespace` via [`Config::stream_for_namespace`].
+pub async fn send_incident(incident: &Incident, config: &Config) {
+    let markdown = formatter::incident_to_markdown(incident);
+
+    tracing::info!("Zulip incident message preview:\n{}", markdown);
+
+    if config.zulip_enabled && !config.zulip_configured() {
+        tracing::warn!("Zulip is enabled but not fully configured — skipping");
+        return;
+    }
+
+    let stream   = config.stream_for_namespace(incident.incident_namespace.as_deref());
+    let severity = incident.severity.as_deref().unwrap_or("unknown");
+    let topic    = format!(
+        "[inc] {} {}",
+        formatter::severity_emoji(severity),
+        incident.user_generated_name,
+    );
+
+    tracing::info!(stream, topic = %topic, id = %incident.id, "Posting new Zulip incident topic");
+
+    let client = build_client(config);
+
+    match post_zulip_message(&client, config, stream, &topic, &markdown).await {
+        Ok(msg_id) => tracing::info!(msg_id, id = %incident.id, "Zulip incident topic created"),
+        Err(e)     => tracing::error!(error = %e, id = %incident.id, "Failed to post Zulip incident"),
     }
 }
 
