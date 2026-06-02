@@ -198,17 +198,17 @@ impl Alert {
 pub struct Incident {
     pub id: String,
     /// Used as the Zulip topic name.
-    pub user_generated_name: String,
-    pub user_summary: Option<String>,
+    pub topic_name: String,
+    pub description: Option<String>,
     pub assignee: Option<String>,
     pub severity: Option<String>,
     pub alerts_count: Option<u64>,
-    /// Linear issue identifier (e.g. `ENG-123`).
-    pub incident_id: Option<String>,
+    /// Linear issue identifier (e.g. `CORE-123`).
+    pub linear_id: Option<String>,
     /// Linear issue URL.
-    pub incident_url: Option<String>,
+    pub linear_url: Option<String>,
     /// Kubernetes namespace — used to route to the correct Zulip stream.
-    pub incident_namespace: Option<String>,
+    pub namespace: Option<String>,
     pub status: Option<String>,
 }
 
@@ -222,7 +222,7 @@ impl Incident {
         let mut missing: Vec<String> = Vec::new();
 
         let id = req_str(v, "/id", &mut missing);
-        let user_generated_name = req_str(v, "/user_generated_name", &mut missing);
+        let topic_name = req_str(v, "/topic_name", &mut missing);
 
         if !missing.is_empty() {
             return Err(missing);
@@ -230,14 +230,14 @@ impl Incident {
 
         Ok(Incident {
             id: id.unwrap(),
-            user_generated_name: user_generated_name.unwrap(),
-            user_summary: opt_str(v, "/user_summary"),
+            topic_name: topic_name.unwrap(),
+            description: opt_str(v, "/description"),
             assignee: opt_str(v, "/assignee"),
             severity: opt_str(v, "/severity"),
             alerts_count: v.pointer("/alerts_count").and_then(|val| val.as_u64()),
-            incident_id: opt_str(v, "/incident_id"),
-            incident_url: opt_str(v, "/incident_url"),
-            incident_namespace: opt_str(v, "/incident_namespace"),
+            linear_id: opt_str(v, "/linear_id"),
+            linear_url: opt_str(v, "/linear_url"),
+            namespace: opt_str(v, "/namespace"),
             status: opt_str(v, "/status"),
         })
     }

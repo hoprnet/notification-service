@@ -43,7 +43,7 @@ pub async fn receive_incident(
 
     tracing::info!(
         id     = %incident.id,
-        name   = %incident.user_generated_name,
+        name   = %incident.topic_name,
         status = ?incident.status,
         "Received incident"
     );

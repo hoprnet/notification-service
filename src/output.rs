@@ -86,8 +86,8 @@ pub async fn send(alert: &EnrichedAlert, config: &Config, messages: &MessageStor
 /// Post a new Zulip topic for the given incident.
 ///
 /// Each call always creates a **new** topic — there is no deduplication.
-/// The topic name is `[inc] {severity_emoji} {user_generated_name}`; the stream is resolved
-/// from `incident.incident_namespace` via [`Config::stream_for_namespace`].
+/// The topic name is `[inc] {severity_emoji} {topic_name}`; the stream is resolved
+/// from `incident.namespace` via [`Config::stream_for_namespace`].
 pub async fn send_incident(incident: &Incident, config: &Config) {
     let markdown = formatter::incident_to_markdown(incident);
 
@@ -98,12 +98,12 @@ pub async fn send_incident(incident: &Incident, config: &Config) {
         return;
     }
 
-    let stream   = config.stream_for_namespace(incident.incident_namespace.as_deref());
+    let stream   = config.stream_for_namespace(incident.namespace.as_deref());
     let severity = incident.severity.as_deref().unwrap_or("unknown");
     let topic    = format!(
         "[inc] {} {}",
         formatter::severity_emoji(severity),
-        incident.user_generated_name,
+        incident.topic_name,
     );
 
     tracing::info!(stream, topic = %topic, id = %incident.id, "Posting new Zulip incident topic");

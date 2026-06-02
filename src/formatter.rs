@@ -154,29 +154,28 @@ pub fn to_markdown(alert: &Alert, config: &Config) -> String {
 /// Render a Keep [`Incident`] as a Zulip-flavoured Markdown message.
 ///
 /// # Layout
-/// Topic: `[inc] {severity_emoji} {user_generated_name}`
+/// Topic: `[inc] {severity_emoji} {topic_name}`
 ///
 /// ```text
-/// {severity_emoji} **{user_generated_name}**
+/// {severity_emoji} **{topic_name}**
 ///
-/// {user_summary}                    ← if present
+/// {description}                    ← if present
 ///
 /// **Details:**
 /// - **Assignee:** …
 /// - **Severity:** …
 /// - **Alerts:** N
 /// - **Namespace:** `…`              ← only when present
-///
-/// 🔗 [Linear Issue](…)              ← only when incident_url is present
+/// - **Linear:** […](…)       ← only when linear_url is present
 /// ```
 pub fn incident_to_markdown(incident: &Incident) -> String {
     let mut out = String::new();
 
     let severity = incident.severity.as_deref().unwrap_or("unknown");
 
-    writeln!(out, "{} **{}**", severity_emoji(severity), incident.user_generated_name).unwrap();
+    writeln!(out, "{} **{}**", severity_emoji(severity), incident.topic_name).unwrap();
 
-    if let Some(summary) = &incident.user_summary {
+    if let Some(summary) = &incident.description {
         writeln!(out).unwrap();
         writeln!(out, "{}", strip_html(summary)).unwrap();
     }
@@ -195,12 +194,12 @@ pub fn incident_to_markdown(incident: &Incident) -> String {
         writeln!(out, "- **Alerts:** `{}`", count).unwrap();
     }
 
-    if let Some(ns) = &incident.incident_namespace {
+    if let Some(ns) = &incident.namespace {
         writeln!(out, "- **Namespace:** `{}`", ns).unwrap();
     }
 
-    if let Some(url) = &incident.incident_url {
-        let label = incident.incident_id.as_deref().unwrap_or("Issue");
+    if let Some(url) = &incident.linear_url {
+        let label = incident.linear_id.as_deref().unwrap_or("Issue");
         writeln!(out, "- **Linear**: [{}]({})", label, url).unwrap();
     }
 
