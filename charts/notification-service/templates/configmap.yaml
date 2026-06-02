@@ -14,3 +14,5 @@ data:
   ZULIP_HOST: {{ .Values.zulip.host | quote }}
   ZULIP_DEFAULT_STREAM: {{ .Values.zulip.defaultStream | quote }}
   ZULIP_NAMESPACE_STREAMS: {{ .Values.zulip.namespaceStreams | toJson | quote }}
+  RUST_LOG: {{ .Values.rustLog | quote }}
+  RUST_BACKTRACE: {{ .Values.rustBacktrace | quote }}

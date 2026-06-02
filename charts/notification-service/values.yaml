@@ -170,3 +170,7 @@ zulip:
   #     monitoring: devops-alerts
   #     production: prod-alerts
   namespaceStreams: {}
+
+
+rustLog: "info"
+rustBacktrace: "full"
