@@ -21,6 +21,7 @@ pub async fn receive_incident(
     State(state): State<AppState>,
     Json(payload): Json<serde_json::Value>,
 ) -> Response {
+    tracing::debug!(payload = %payload, "Incoming incident payload");
     let incident = match Incident::from_value(&payload) {
         Ok(i) => i,
         Err(missing) => {
@@ -75,6 +76,7 @@ pub async fn receive_alert(
     State(state): State<AppState>,
     Json(payload): Json<serde_json::Value>,
 ) -> Response {
+    tracing::debug!(payload = %payload, "Incoming alert payload");
     let alert = match Alert::from_value(&payload) {
         Ok(a) => a,
         Err(missing) => {

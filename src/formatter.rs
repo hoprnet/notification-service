@@ -178,7 +178,7 @@ pub fn incident_to_markdown(incident: &Incident) -> String {
 
     if let Some(summary) = &incident.user_summary {
         writeln!(out).unwrap();
-        writeln!(out, "{}", summary).unwrap();
+        writeln!(out, "{}", strip_html(summary)).unwrap();
     }
 
     writeln!(out).unwrap();
@@ -306,6 +306,27 @@ fn status_emoji(status: &str) -> &'static str {
         "suppressed" => "🔕",
         _ => "❓",
     }
+}
+
+// ---------------------------------------------------------------------------
+// HTML stripper
+// ---------------------------------------------------------------------------
+
+/// Remove HTML tags from a string, leaving only the inner text.
+/// Consecutive whitespace is collapsed to a single space and the result is trimmed.
+fn strip_html(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut in_tag = false;
+    for ch in s.chars() {
+        match ch {
+            '<' => in_tag = true,
+            '>' => in_tag = false,
+            _ if !in_tag => out.push(ch),
+            _ => {}
+        }
+    }
+    // Collapse runs of whitespace (including newlines from block elements).
+    out.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 // ---------------------------------------------------------------------------
