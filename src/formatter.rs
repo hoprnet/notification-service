@@ -185,14 +185,14 @@ pub fn incident_to_markdown(incident: &Incident) -> String {
     writeln!(out, "**Details:**").unwrap();
 
     match &incident.assignee {
-        Some(a) if !a.is_empty() => writeln!(out, "- **Assignee:** {}", a).unwrap(),
+        Some(a) if !a.is_empty() => writeln!(out, "- **Assignee:** `{}`", a).unwrap(),
         _ => writeln!(out, "- **Assignee:** —").unwrap(),
     }
 
-    writeln!(out, "- **Severity:** {}", severity).unwrap();
+    writeln!(out, "- **Severity:** `{}`", severity).unwrap();
 
     if let Some(count) = incident.alerts_count {
-        writeln!(out, "- **Alerts:** {}", count).unwrap();
+        writeln!(out, "- **Alerts:** `{}`", count).unwrap();
     }
 
     if let Some(ns) = &incident.incident_namespace {

@@ -33,7 +33,7 @@ curl -X POST http://localhost:8080/alerts \
 ### incident-example
 
 ```bash
-curl -X POST http://localhost:8080/incident \
+curl -X POST http://localhost:8080/incidents \
   -H "Content-Type: application/json" \
   -d @test/incident-example.json
 ```
