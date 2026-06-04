@@ -114,6 +114,18 @@ impl Config {
         ))
     }
 
+    /// Returns `None` when `KEEP_BASE_URL` is not configured.
+    pub fn keep_incident_url(&self, incident_id: &str) -> Option<String> {
+        if self.keep_base_url.is_empty() {
+            return None;
+        }
+        Some(format!(
+            "{}/incidents/{}/alerts",
+            self.keep_base_url.trim_end_matches('/'),
+            incident_id,
+        ))
+    }
+
     /// Resolve the Zulip stream name for a given Kubernetes namespace.
     ///
     /// Looks up `namespace` in `zulip_namespace_streams`; falls back to

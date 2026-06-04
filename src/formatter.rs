@@ -8,7 +8,7 @@ use crate::{config::Config, models::{Alert, Incident}};
 ///
 /// # Layout
 /// ```text
-/// {severity_emoji} **[{name}]({keep_url})** · {status_emoji} {status}
+/// {severity_emoji} **{name}** · {status_emoji} {status}
 ///
 /// *{annotations.summary}*               ← if present
 ///
@@ -23,7 +23,7 @@ use crate::{config::Config, models::{Alert, Incident}};
 /// - **Start time:** `…`              ← UTC ISO 8601
 /// - **End time:** `…`                ← only shown when present, UTC ISO 8601
 ///
-/// 📊 [Prometheus](…)  · 📖 [Runbook](…) ← Runbook only when present
+/// 🔔 [Keep](…) · 📊 [Prometheus](…)  · 📖 [Runbook](…) ← Keep/Runbook only when present
 /// ```
 ///
 /// # Zulip message-update strategy (TODO)
@@ -42,19 +42,11 @@ pub fn to_markdown(alert: &Alert, config: &Config) -> String {
     let mut out = String::new();
 
     // ── Header ────────────────────────────────────────────────────────────────
-    // The alert name is linked to the Keep alert page when KEEP_BASE_URL is
-    // configured.  When it is not, the name is rendered as plain bold text —
-    // there is no fallback to Prometheus (which appears separately in the footer).
-    let header_name = match config.keep_alert_url(&alert.fingerprint) {
-        Some(keep_url) => format!("**[{}]({})**", alert.name, keep_url),
-        None => format!("**{}**", alert.name),
-    };
-
     writeln!(
         out,
-        "{} {} · {} {}",
+        "{} **{}** · {} {}",
         severity_emoji(&alert.severity),
-        header_name,
+        alert.name,
         status_emoji(&alert.status),
         alert.status,
     )
@@ -92,15 +84,16 @@ pub fn to_markdown(alert: &Alert, config: &Config) -> String {
     // ── Bullet list ───────────────────────────────────────────────────────────
     writeln!(out, "**Details:**").unwrap();
 
+    if let Some(ns) = &alert.namespace {
+        writeln!(out, "- **Namespace:** `{}`", ns).unwrap();
+    }
     if let Some(app) = &alert.labels.app_name {
         writeln!(out, "- **Application:** `{}`", app).unwrap();
     }
-
     writeln!(out, "- **Occurrences:** {}", alert.firing_counter).unwrap();
 
-    match &alert.assignee {
-        Some(a) if !a.is_empty() => writeln!(out, "- **Assignee:** {}", a).unwrap(),
-        _ => writeln!(out, "- **Assignee:** —").unwrap(),
+    if let Some(assignee) = &alert.assignee {
+        writeln!(out, "- **Assignee:** `{}`", assignee).unwrap();
     }
 
     if let Some(reason) = &alert.labels.reason {
@@ -133,6 +126,9 @@ pub fn to_markdown(alert: &Alert, config: &Config) -> String {
     writeln!(out).unwrap();
 
     let mut footer: Vec<String> = Vec::new();
+    if let Some(keep_url) = config.keep_alert_url(&alert.fingerprint) {
+        footer.push(format!("🔔 [Keep]({})", keep_url));
+    }
     if let Some(ref generator_url) = alert.generator_url {
         footer.push(format!("📊 [Prometheus]({})", generator_url));
     }
@@ -168,7 +164,7 @@ pub fn to_markdown(alert: &Alert, config: &Config) -> String {
 /// - **Namespace:** `…`              ← only when present
 /// - **Linear:** […](…)       ← only when linear_url is present
 /// ```
-pub fn incident_to_markdown(incident: &Incident) -> String {
+pub fn incident_to_markdown(incident: &Incident, config: &Config) -> String {
     let mut out = String::new();
 
     let severity = incident.severity.as_deref().unwrap_or("unknown");
@@ -189,9 +185,8 @@ pub fn incident_to_markdown(incident: &Incident) -> String {
     writeln!(out).unwrap();
     writeln!(out, "**Details:**").unwrap();
 
-    match &incident.assignee {
-        Some(a) if !a.is_empty() => writeln!(out, "- **Assignee:** `{}`", a).unwrap(),
-        _ => writeln!(out, "- **Assignee:** —").unwrap(),
+    if let Some(assignee) = &incident.assignee {
+        writeln!(out, "- **Assignee:** `{}`", assignee).unwrap();
     }
 
     writeln!(out, "- **Severity:** `{}`", severity).unwrap();
@@ -205,9 +200,19 @@ pub fn incident_to_markdown(incident: &Incident) -> String {
         writeln!(out, "- **Namespace:** `{}`", ns).unwrap();
     }
 
+
+    // ── Footer links ──────────────────────────────────────────────────────────
+    let mut links: Vec<String> = Vec::new();
     if let Some(url) = &incident.linear_url {
         let label = incident.linear_id.as_deref().unwrap_or("Issue");
-        writeln!(out, "- **Linear**: [{}]({})", label, url).unwrap();
+        links.push(format!("[{}]({})", label, url));
+    }
+    if let Some(keep_url) = config.keep_incident_url(&incident.id) {
+        links.push(format!("[Keep]({})", keep_url));
+    }
+    if !links.is_empty() {
+        writeln!(out).unwrap();
+        writeln!(out, "**Links:** {}", links.join(" · ")).unwrap();
     }
 
     out
@@ -251,19 +256,19 @@ fn build_graylog_url(alert: &Alert, config: &Config) -> Option<String> {
 fn parse_datetime_to_iso(s: &str) -> Option<String> {
     // "2026-05-26 09:06:25.383000"  (Keep format — space separator, microseconds)
     if let Ok(naive) = NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f") {
-        return Some(naive.and_utc().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string());
+        return Some(naive.and_utc().format("%Y-%m-%d %H:%M:%S").to_string());
     }
     // "2026-05-26T09:06:25.265Z"  (ISO 8601 with Z)
     if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
         return Some(
             dt.with_timezone(&Utc)
-                .format("%Y-%m-%dT%H:%M:%S%.3fZ")
+                .format("%Y-%m-%d %H:%M:%S")
                 .to_string(),
         );
     }
     // "2026-05-26T09:06:25.383000"  (T separator, no timezone)
     if let Ok(naive) = NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S%.f") {
-        return Some(naive.and_utc().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string());
+        return Some(naive.and_utc().format("%Y-%m-%d %H:%M:%S").to_string());
     }
     None
 }
@@ -432,9 +437,12 @@ mod tests {
             &make_alert("firing", "warning"),
             &make_config("https://incidents.example.com"),
         );
+        // Keep URL appears in the footer, not in the header
+        assert!(msg.contains("[Keep]"));
         assert!(msg.contains(
             "https://incidents.example.com/alerts/feed?alertPayloadFingerprint=abc123def456"
         ));
+        assert!(!msg.contains("[TestAlert]"));
     }
 
     #[test]
@@ -443,7 +451,8 @@ mod tests {
         // Name appears as bold text, not a hyperlink
         assert!(msg.contains("**TestAlert**"));
         assert!(!msg.contains("[TestAlert]"));
-        // Prometheus URL still appears in the footer, not in the header
+        assert!(!msg.contains("[Keep]"));
+        // Prometheus URL still appears in the footer
         assert!(msg.contains("http://prometheus/graph"));
     }
 

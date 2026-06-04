@@ -11,6 +11,6 @@
   "alerts_count": 2,
   "status": "firing",
   "linear_id": "DEV-77",
-  "linear_url": "https://incidents.staging.hoprnet.link/incidents/4ee4a928-7c16-4a18-b2dd-be1e17bb8aa6/alerts",
+  "linear_url": "https://linear.app/hoprnet/issue/DEV-77",
   "namespace": "monitoring"
 }
