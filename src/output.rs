@@ -89,7 +89,7 @@ pub async fn send(alert: &EnrichedAlert, config: &Config, messages: &MessageStor
 /// The topic name is `[inc] {severity_emoji} {topic_name}`; the stream is resolved
 /// from `incident.namespace` via [`Config::stream_for_namespace`].
 pub async fn send_incident(incident: &Incident, config: &Config) {
-    let markdown = formatter::incident_to_markdown(incident);
+    let markdown = formatter::incident_to_markdown(incident, config);
 
     tracing::info!("Zulip incident message preview:\n{}", markdown);
 
