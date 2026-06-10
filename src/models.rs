@@ -12,7 +12,7 @@ pub struct AlertLabels {
     pub pod: Option<String>,
     pub reason: Option<String>,
     pub container: Option<String>,
-    /// `labels.label_app_kubernetes_io_name`
+    /// `labels.app_kubernetes_io_name`
     pub app_name: Option<String>,
 }
 
@@ -41,8 +41,10 @@ pub struct Alert {
     pub name: String,
     pub status: String,
     pub severity: String,
-    /// Raw timestamp string from `startedAt`.
-    pub started_at: String,
+    /// Raw timestamp string from `startedAt`. Optional; falls back to `firing_start_time` or system time.
+    pub started_at: Option<String>,
+    /// Raw timestamp string from `firingStartTime` in the payload.
+    pub firing_start_time: Option<String>,
     /// Raw timestamp string from `lastReceived`.
     pub last_received: String,
     /// Number of times the alert has fired (`firingCounter`).
@@ -142,7 +144,8 @@ impl Alert {
         let name = req_str(v, "/name", &mut missing);
         let status = req_str(v, "/status", &mut missing);
         let severity = req_str(v, "/severity", &mut missing);
-        let started_at = req_str(v, "/startedAt", &mut missing);
+        let started_at = opt_str(v, "/startedAt");
+        let firing_start_time = opt_str(v, "/firingStartTime");
         let last_received = req_str(v, "/lastReceived", &mut missing);
         let fingerprint = req_str(v, "/fingerprint", &mut missing);
         let ends_at = opt_str(v, "/endsAt");
@@ -163,7 +166,8 @@ impl Alert {
             name: name.unwrap(),
             status: status.unwrap(),
             severity: severity.unwrap(),
-            started_at: started_at.unwrap(),
+            started_at,
+            firing_start_time,
             last_received: last_received.unwrap(),
             firing_counter: firing_counter.unwrap(),
             fingerprint: fingerprint.unwrap(),
@@ -179,13 +183,24 @@ impl Alert {
                 pod: opt_str(v, "/labels/pod"),
                 reason: opt_str(v, "/labels/reason"),
                 container: opt_str(v, "/labels/container"),
-                app_name: opt_str(v, "/labels/label_app_kubernetes_io_name"),
+                app_name: opt_str(v, "/labels/app_kubernetes_io_name"),
             },
             annotations: AlertAnnotations {
                 summary: opt_str(v, "/annotations/summary"),
                 runbook_url: opt_str(v, "/annotations/runbook_url"),
             },
         })
+    }
+
+    /// Resolves the effective start time using a fallback chain:
+    /// 1. `started_at` from the payload
+    /// 2. `firing_start_time` from the payload
+    /// 3. current system time (UTC)
+    pub fn effective_started_at(&self) -> String {
+        self.started_at
+            .clone()
+            .or_else(|| self.firing_start_time.clone())
+            .unwrap_or_else(|| Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string())
     }
 }
 

@@ -113,7 +113,7 @@ pub fn to_markdown(alert: &Alert, config: &Config) -> String {
         writeln!(out, "- **Correlated alerts:** [{}]({})", parent_name, url).unwrap();
     }
 
-    if let Some(ts) = parse_datetime_to_iso(&alert.started_at) {
+    if let Some(ts) = parse_datetime_to_iso(&alert.effective_started_at()) {
         writeln!(out, "- **Start time:** {}", ts).unwrap();
     }
     if let Some(ref ends_at) = alert.ends_at {
@@ -236,7 +236,7 @@ fn build_graylog_url(alert: &Alert, config: &Config) -> Option<String> {
     let namespace = alert.namespace.as_deref()?;
     let app_name = alert.labels.app_name.as_deref()?;
 
-    let start_iso = parse_datetime_to_iso(&alert.started_at)?;
+    let start_iso = parse_datetime_to_iso(&alert.effective_started_at())?;
     let end_iso = Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string();
 
     Some(format!(
@@ -372,7 +372,8 @@ mod tests {
             name: "TestAlert".into(),
             status: status.into(),
             severity: severity.into(),
-            started_at: "2026-01-01 00:00:00".into(),
+            started_at: Some("2026-01-01 00:00:00".into()),
+            firing_start_time: None,
             last_received: "2026-01-01T01:00:00Z".into(),
             firing_counter: 3,
             fingerprint: "abc123def456".into(),
