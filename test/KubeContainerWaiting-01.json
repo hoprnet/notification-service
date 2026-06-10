@@ -27,7 +27,7 @@
   "labels": {
     "alertname": "KubeContainerWaiting",
     "container": "crash-test",
-    "label_app_kubernetes_io_name": "crash-test-app",
+    "app_kubernetes_io_name": "crash-test-app",
     "namespace": "monitoring",
     "pod": "crash-test",
     "prometheus": "monitoring/kube-prometheus-stack",
@@ -91,7 +91,7 @@
   "payload": {
     "startsAt": "2026-05-26T16:31:25.265Z",
     "endsAt": "2026-05-26T16:36:25.265Z",
-    "generatorURL": "http://prometheus.staging.hoprnet.link/graph?g0.expr=%28max+by+%28namespace%2C+pod%2C+container%2C+reason%29+%28kube_pod_container_status_waiting_reason%7Bjob%3D%22kube-state-metrics%22%2Cnamespace%3D~%22.%2A%22%7D+%3E+0%29%29+%2A+on+%28namespace%2C+pod%29+group_left+%28label_app_kubernetes_io_name%29+kube_pod_labels&g0.tab=1"
+    "generatorURL": "http://prometheus.staging.hoprnet.link/graph?g0.expr=%28max+by+%28namespace%2C+pod%2C+container%2C+reason%29+%28kube_pod_container_status_waiting_reason%7Bjob%3D%22kube-state-metrics%22%2Cnamespace%3D~%22.%2A%22%7D+%3E+0%29%29+%2A+on+%28namespace%2C+pod%29+group_left+%28app_kubernetes_io_name%29+kube_pod_labels&g0.tab=1"
   },
   "severity_emoji": "⚠️",
   "correlated_alert": "KubePodCrashLooping",
@@ -106,11 +106,11 @@
     "runbook_url": "https://github.com/hoprnet/gitops/blob/master/operations/runbooks/KubeContainerWaiting.md",
     "summary": "Application crash-test-app has a container that cannot start."
   },
-  "generatorURL": "http://prometheus.staging.hoprnet.link/graph?g0.expr=%28max+by+%28namespace%2C+pod%2C+container%2C+reason%29+%28kube_pod_container_status_waiting_reason%7Bjob%3D%22kube-state-metrics%22%2Cnamespace%3D~%22.%2A%22%7D+%3E+0%29%29+%2A+on+%28namespace%2C+pod%29+group_left+%28label_app_kubernetes_io_name%29+kube_pod_labels&g0.tab=1",
+  "generatorURL": "http://prometheus.staging.hoprnet.link/graph?g0.expr=%28max+by+%28namespace%2C+pod%2C+container%2C+reason%29+%28kube_pod_container_status_waiting_reason%7Bjob%3D%22kube-state-metrics%22%2Cnamespace%3D~%22.%2A%22%7D+%3E+0%29%29+%2A+on+%28namespace%2C+pod%29+group_left+%28app_kubernetes_io_name%29+kube_pod_labels&g0.tab=1",
   "container": "crash-test",
   "correlated_fingerprint": "b58e9384887fe382",
   "pod": "crash-test",
-  "label_app_kubernetes_io_name": "crash-test-app",
+  "app_kubernetes_io_name": "crash-test-app",
   "value": "",
   "correlated_alert_severity": "warning"
 }

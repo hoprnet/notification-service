@@ -27,7 +27,7 @@
   "labels": {
     "alertname": "KubePodCrashLooping",
     "container": "crash-test",
-    "label_app_kubernetes_io_name": "crash-test-app",
+    "app_kubernetes_io_name": "crash-test-app",
     "namespace": "monitoring",
     "pod": "crash-test",
     "prometheus": "monitoring/kube-prometheus-stack",
@@ -91,7 +91,7 @@
   "payload": {
     "startsAt": "2026-05-26T09:06:25.265Z",
     "endsAt": "2026-05-26T16:41:55.265Z",
-    "generatorURL": "http://prometheus.staging.hoprnet.link/graph?g0.expr=%28max+by+%28namespace%2C+pod%2C+container%2C+reason%29+%28max_over_time%28kube_pod_container_status_waiting_reason%7Bjob%3D%22kube-state-metrics%22%2Cnamespace%3D~%22.%2A%22%2Creason%3D%22CrashLoopBackOff%22%7D%5B5m%5D%29+%3E%3D+1%29%29+%2A+on+%28namespace%2C+pod%29+group_left+%28label_app_kubernetes_io_name%29+kube_pod_labels&g0.tab=1"
+    "generatorURL": "http://prometheus.staging.hoprnet.link/graph?g0.expr=%28max+by+%28namespace%2C+pod%2C+container%2C+reason%29+%28max_over_time%28kube_pod_container_status_waiting_reason%7Bjob%3D%22kube-state-metrics%22%2Cnamespace%3D~%22.%2A%22%2Creason%3D%22CrashLoopBackOff%22%7D%5B5m%5D%29+%3E%3D+1%29%29+%2A+on+%28namespace%2C+pod%29+group_left+%28app_kubernetes_io_name%29+kube_pod_labels&g0.tab=1"
   },
   "severity_emoji": "⚠️",
   "alertname": "KubePodCrashLooping",
@@ -106,9 +106,9 @@
     "runbook_url": "https://github.com/hoprnet/gitops/blob/master/operations/runbooks/KubePodCrashLooping.md",
     "summary": "Application crash-test-app is repeatedly crashing and cannot start."
   },
-  "generatorURL": "http://prometheus.staging.hoprnet.link/graph?g0.expr=%28max+by+%28namespace%2C+pod%2C+container%2C+reason%29+%28max_over_time%28kube_pod_container_status_waiting_reason%7Bjob%3D%22kube-state-metrics%22%2Cnamespace%3D~%22.%2A%22%2Creason%3D%22CrashLoopBackOff%22%7D%5B5m%5D%29+%3E%3D+1%29%29+%2A+on+%28namespace%2C+pod%29+group_left+%28label_app_kubernetes_io_name%29+kube_pod_labels&g0.tab=1",
+  "generatorURL": "http://prometheus.staging.hoprnet.link/graph?g0.expr=%28max+by+%28namespace%2C+pod%2C+container%2C+reason%29+%28max_over_time%28kube_pod_container_status_waiting_reason%7Bjob%3D%22kube-state-metrics%22%2Cnamespace%3D~%22.%2A%22%2Creason%3D%22CrashLoopBackOff%22%7D%5B5m%5D%29+%3E%3D+1%29%29+%2A+on+%28namespace%2C+pod%29+group_left+%28app_kubernetes_io_name%29+kube_pod_labels&g0.tab=1",
   "pod": "crash-test",
-  "label_app_kubernetes_io_name": "crash-test-app",
+  "app_kubernetes_io_name": "crash-test-app",
   "value": "",
   "container": "crash-test"
 }
