@@ -254,21 +254,21 @@ fn build_graylog_url(alert: &Alert, config: &Config) -> Option<String> {
 /// UTC string (`2026-05-26T09:06:25.383Z`).  Returns `None` if no format
 /// matches.
 fn parse_datetime_to_iso(s: &str) -> Option<String> {
-    // "2026-05-26 09:06:25.383000"  (Keep format — space separator, microseconds)
+    // "2026-05-26 09:06:25.383000"  (space separator, microseconds)
     if let Ok(naive) = NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f") {
-        return Some(naive.and_utc().format("%Y-%m-%d %H:%M:%S").to_string());
+        return Some(naive.and_utc().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string());
     }
     // "2026-05-26T09:06:25.265Z"  (ISO 8601 with Z)
     if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
         return Some(
             dt.with_timezone(&Utc)
-                .format("%Y-%m-%d %H:%M:%S")
+                .format("%Y-%m-%dT%H:%M:%S%.3fZ")
                 .to_string(),
         );
     }
     // "2026-05-26T09:06:25.383000"  (T separator, no timezone)
     if let Ok(naive) = NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S%.f") {
-        return Some(naive.and_utc().format("%Y-%m-%d %H:%M:%S").to_string());
+        return Some(naive.and_utc().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string());
     }
     None
 }
