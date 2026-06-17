@@ -14,6 +14,10 @@ pub struct AlertLabels {
     pub container: Option<String>,
     /// `labels.app_kubernetes_io_name`
     pub app_name: Option<String>,
+    /// `labels.infrastructure`
+    pub infrastructure: Option<String>,
+    /// `labels.network`
+    pub network: Option<String>,
 }
 
 /// Fields extracted from the `annotations` object.
@@ -184,6 +188,8 @@ impl Alert {
                 reason: opt_str(v, "/labels/reason"),
                 container: opt_str(v, "/labels/container"),
                 app_name: opt_str(v, "/labels/app_kubernetes_io_name"),
+                infrastructure: opt_str(v, "/labels/infrastructure"),
+                network: opt_str(v, "/labels/network"),
             },
             annotations: AlertAnnotations {
                 summary: opt_str(v, "/annotations/summary"),

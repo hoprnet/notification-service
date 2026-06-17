@@ -84,6 +84,12 @@ pub fn to_markdown(alert: &Alert, config: &Config) -> String {
     // ── Bullet list ───────────────────────────────────────────────────────────
     writeln!(out, "**Details:**").unwrap();
 
+    if let Some(infra) = &alert.labels.infrastructure {
+        writeln!(out, "- **Infrastructure:** `{}`", infra).unwrap();
+    }
+    if let Some(network) = &alert.labels.network {
+        writeln!(out, "- **Network:** `{}`", network).unwrap();
+    }
     if let Some(ns) = &alert.namespace {
         writeln!(out, "- **Namespace:** `{}`", ns).unwrap();
     }
