@@ -106,7 +106,9 @@ pub fn to_markdown(alert: &Alert, config: &Config) -> String {
         writeln!(out, "- **Reason:** `{}`", reason).unwrap();
     }
     if let Some(pod) = &alert.labels.pod {
-        writeln!(out, "- **Pod:** `{}`", pod).unwrap();
+        if !pod.contains("kube-prometheus-stack-prometheus-node-exporter") {
+            writeln!(out, "- **Pod:** `{}`", pod).unwrap();
+        }
     }
     if let Some(container) = &alert.labels.container {
         writeln!(out, "- **Container:** `{}`", container).unwrap();
