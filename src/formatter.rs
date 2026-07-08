@@ -15,6 +15,7 @@ use crate::{config::Config, models::{Alert, Incident}};
 /// {description}                          ← if present (and different from summary)
 ///
 /// - **Application:** `…`                 ← only shown when present
+/// - **Instance:** `…`                    ← only shown when present
 /// - **Occurrences:** N
 /// - **Assignee:** …
 /// - **Reason:** `…`                       ← only shown when present
@@ -96,6 +97,9 @@ pub fn to_markdown(alert: &Alert, config: &Config) -> String {
     if let Some(app) = &alert.labels.app_name {
         writeln!(out, "- **Application:** `{}`", app).unwrap();
     }
+    if let Some(instance) = &alert.labels.instance {
+        writeln!(out, "- **Instance:** `{}`", instance).unwrap();
+    }
     writeln!(out, "- **Occurrences:** {}", alert.firing_counter).unwrap();
 
     if let Some(assignee) = &alert.assignee {
@@ -106,7 +110,9 @@ pub fn to_markdown(alert: &Alert, config: &Config) -> String {
         writeln!(out, "- **Reason:** `{}`", reason).unwrap();
     }
     if let Some(pod) = &alert.labels.pod {
-        writeln!(out, "- **Pod:** `{}`", pod).unwrap();
+        if !pod.contains("kube-prometheus-stack-prometheus-node-exporter") {
+            writeln!(out, "- **Pod:** `{}`", pod).unwrap();
+        }
     }
     if let Some(container) = &alert.labels.container {
         writeln!(out, "- **Container:** `{}`", container).unwrap();
@@ -396,6 +402,9 @@ mod tests {
                 reason: Some("OOMKilled".into()),
                 container: None,
                 app_name: None,
+                instance: None,
+                infrastructure: None,
+                network: None,
             },
             annotations: AlertAnnotations {
                 summary: Some("Pod is out of memory.".into()),
@@ -423,6 +432,15 @@ mod tests {
         let msg = to_markdown(&make_alert("firing", "warning"), &make_config(""));
         assert!(!msg.contains("Container"));
         assert!(!msg.contains("Application"));
+        assert!(!msg.contains("Instance"));
+    }
+
+    #[test]
+    fn instance_shown_when_present() {
+        let mut alert = make_alert("firing", "warning");
+        alert.labels.instance = Some("my-app-0".into());
+        let msg = to_markdown(&alert, &make_config(""));
+        assert!(msg.contains("- **Instance:** `my-app-0`"));
     }
 
     #[test]
