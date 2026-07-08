@@ -31,6 +31,9 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
+# This is for setting Kubernetes Annotations on the Deployment.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+deploymentAnnotations: {}
 # This is for setting Kubernetes Annotations to a Pod.
 # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
 podAnnotations: {}
