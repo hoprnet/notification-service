@@ -14,6 +14,8 @@ pub struct AlertLabels {
     pub container: Option<String>,
     /// `labels.app_kubernetes_io_name`
     pub app_name: Option<String>,
+    /// `labels.app_kubernetes_io_instance`
+    pub instance: Option<String>,
     /// `labels.infrastructure`
     pub infrastructure: Option<String>,
     /// `labels.network`
@@ -188,6 +190,7 @@ impl Alert {
                 reason: opt_str(v, "/labels/reason"),
                 container: opt_str(v, "/labels/container"),
                 app_name: opt_str(v, "/labels/app_kubernetes_io_name"),
+                instance: opt_str(v, "/labels/app_kubernetes_io_instance"),
                 infrastructure: opt_str(v, "/labels/infrastructure"),
                 network: opt_str(v, "/labels/network"),
             },
