@@ -58,7 +58,7 @@ pub struct Config {
     pub reminder_default_stream: String,
 
     /// Default Zulip topic for the daily open-alerts/incidents reminder.
-    /// Defaults to `Daily`.  Controlled by `ZULIP_REMINDER_TOPIC`.
+    /// Defaults to `daily updates`.  Controlled by `ZULIP_REMINDER_TOPIC`.
     /// Overridable per-request via the `topic` field of the `/reminders` payload.
     pub reminder_default_topic: String,
 }
@@ -96,7 +96,7 @@ impl Config {
                 .and_then(|v| v.trim().parse().ok())
                 .unwrap_or(10),
             reminder_default_stream: env_or("ZULIP_REMINDER_STREAM", "Town Square"),
-            reminder_default_topic: env_or("ZULIP_REMINDER_TOPIC", "Daily"),
+            reminder_default_topic: env_or("ZULIP_REMINDER_TOPIC", "daily updates"),
         }
     }
 

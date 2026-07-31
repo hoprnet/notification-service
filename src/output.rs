@@ -125,7 +125,7 @@ pub async fn send_incident(incident: &Incident, config: &Config) {
 /// - **Stream** — `reminder.stream` if present, else `ZULIP_REMINDER_STREAM`
 ///   (default `Town Square`).
 /// - **Topic** — `reminder.topic` if present, else `ZULIP_REMINDER_TOPIC`
-///   (default `Daily`).
+///   (default `daily updates`).
 pub async fn send_reminder(reminder: &Reminder, config: &Config) {
     let markdown = formatter::reminder_to_markdown(reminder, config);
 
