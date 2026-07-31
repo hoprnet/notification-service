@@ -1,8 +1,10 @@
 mod alert;
+mod alert_with_incident;
 mod incident;
 mod reminder;
 
 pub use alert::{Alert, EnrichedAlert};
+pub use alert_with_incident::AlertWithIncident;
 pub use incident::Incident;
 pub use reminder::Reminder;
 

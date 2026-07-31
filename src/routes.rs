@@ -6,7 +6,7 @@ use axum::{
 };
 use serde_json::json;
 
-use crate::{models::{Alert, Incident, Reminder}, output, processing, AppState};
+use crate::{models::{Alert, AlertWithIncident, Incident, Reminder}, output, processing, AppState};
 
 /// `POST /incident` — receive a Keep incident payload, format it, and post a
 /// new Zulip topic.
@@ -113,6 +113,62 @@ pub async fn receive_alert(
         Json(json!({
             "status": "processed",
             "id": enriched.alert.id,
+        })),
+    )
+        .into_response()
+}
+
+/// `POST /alert-with-incident` — receive an alert payload already correlated
+/// to a Keep incident, and post a reduced-content message into that
+/// incident's Zulip topic instead of the namespace's usual alerts topic.
+///
+/// # Request
+/// Same shape as `POST /alerts`, plus required `incident_id`/`incident_name`
+/// fields.
+///
+/// # Responses
+/// - `200 OK` — alert accepted and dispatched to the incident's topic.
+/// - `422 Unprocessable Entity` — JSON is valid but one or more required
+///   fields are absent or have an unexpected type.
+pub async fn receive_alert_with_incident(
+    State(state): State<AppState>,
+    Json(payload): Json<serde_json::Value>,
+) -> Response {
+    tracing::debug!(payload = %payload, "Incoming alert-with-incident payload");
+    let awi = match AlertWithIncident::from_value(&payload) {
+        Ok(awi) => awi,
+        Err(missing) => {
+            tracing::warn!(
+                fields  = ?missing,
+                payload = %payload,
+                "Rejected alert-with-incident: missing required fields"
+            );
+            return (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                Json(json!({
+                    "error": "missing required fields",
+                    "fields": missing,
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    tracing::info!(
+        id          = %awi.alert.id,
+        name        = %awi.alert.name,
+        incident_id = %awi.incident_id,
+        "Received alert with linked incident"
+    );
+
+    output::send_alert_with_incident(&awi, &state.config).await;
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "status": "processed",
+            "id": awi.alert.id,
+            "incident_id": awi.incident_id,
         })),
     )
         .into_response()

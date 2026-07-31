@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 
 use serde::Deserialize;
 
-use crate::{config::Config, formatter, message_store::MessageStore, models::{EnrichedAlert, Incident, Reminder}};
+use crate::{config::Config, formatter, message_store::MessageStore, models::{AlertWithIncident, EnrichedAlert, Incident, Reminder}};
 
 /// Send or update a Zulip message for the given enriched alert.
 ///
@@ -86,8 +86,8 @@ pub async fn send(alert: &EnrichedAlert, config: &Config, messages: &MessageStor
 /// Post a new Zulip topic for the given incident.
 ///
 /// Each call always creates a **new** topic — there is no deduplication.
-/// The topic name is `[inc] {severity_emoji} {topic_name}`; the stream is resolved
-/// from `incident.namespace` via [`Config::stream_for_namespace`].
+/// The topic name is built via [`Config::incident_topic`]; the stream is
+/// resolved from `incident.namespace` via [`Config::stream_for_namespace`].
 pub async fn send_incident(incident: &Incident, config: &Config) {
     let markdown = formatter::incident_to_markdown(incident, config);
 
@@ -98,13 +98,8 @@ pub async fn send_incident(incident: &Incident, config: &Config) {
         return;
     }
 
-    let stream   = config.stream_for_namespace(incident.namespace.as_deref());
-    let severity = incident.severity.as_deref().unwrap_or("unknown");
-    let topic    = format!(
-        "[inc] {} {}",
-        formatter::severity_emoji(severity),
-        incident.topic_name,
-    );
+    let stream = config.stream_for_namespace(incident.namespace.as_deref());
+    let topic = config.incident_topic(&incident.topic_name);
 
     tracing::info!(stream, topic = %topic, id = %incident.id, "Posting new Zulip incident topic");
 
@@ -113,6 +108,45 @@ pub async fn send_incident(incident: &Incident, config: &Config) {
     match post_zulip_message(&client, config, stream, &topic, &markdown).await {
         Ok(msg_id) => tracing::info!(msg_id, id = %incident.id, "Zulip incident topic created"),
         Err(e)     => tracing::error!(error = %e, id = %incident.id, "Failed to post Zulip incident"),
+    }
+}
+
+/// Post a reduced-content alert message into its linked incident's Zulip
+/// topic, rather than the namespace's usual `alerts-{environment}` topic.
+///
+/// The topic is built via [`Config::incident_topic`] — the same helper used
+/// by [`send_incident`] — so this message lands in the same topic as the
+/// incident itself, regardless of which endpoint reported it. The stream is
+/// still resolved from `alert.namespace` via [`Config::stream_for_namespace`],
+/// same as any other alert.
+///
+/// Always posts a **new** message — there is no deduplication.
+pub async fn send_alert_with_incident(awi: &AlertWithIncident, config: &Config) {
+    let markdown = formatter::alert_with_incident_to_markdown(awi, config);
+
+    tracing::info!("Zulip alert-with-incident message preview:\n{}", markdown);
+
+    if config.zulip_enabled && !config.zulip_configured() {
+        tracing::warn!("Zulip is enabled but not fully configured — skipping");
+        return;
+    }
+
+    let stream = config.stream_for_namespace(awi.alert.namespace.as_deref());
+    let topic = config.incident_topic(&awi.incident_name);
+
+    tracing::info!(
+        stream,
+        topic = %topic,
+        incident_id = %awi.incident_id,
+        fingerprint = %awi.alert.fingerprint,
+        "Posting alert to incident topic"
+    );
+
+    let client = build_client(config);
+
+    match post_zulip_message(&client, config, stream, &topic, &markdown).await {
+        Ok(msg_id) => tracing::info!(msg_id, incident_id = %awi.incident_id, "Alert posted to incident topic"),
+        Err(e) => tracing::error!(error = %e, incident_id = %awi.incident_id, "Failed to post alert to incident topic"),
     }
 }
 

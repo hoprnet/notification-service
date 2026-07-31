@@ -155,6 +155,16 @@ impl Config {
     pub fn zulip_topic(&self) -> String {
         format!("alerts-{}", self.environment_name)
     }
+
+    /// Build the dedicated Zulip topic for a Keep incident.
+    ///
+    /// Shared between `POST /incidents` (using `Incident::topic_name`) and
+    /// `POST /alert-with-incident` (using `AlertWithIncident::incident_name`)
+    /// so a message about the same incident always lands in the same topic
+    /// regardless of which endpoint reported it.
+    pub fn incident_topic(&self, incident_name: &str) -> String {
+        format!("[inc] {}", incident_name)
+    }
 }
 
 // ---------------------------------------------------------------------------
