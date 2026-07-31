@@ -42,17 +42,4 @@ pub struct Reminder {
     pub alerts: Vec<AlertSummary>,
     #[serde(default)]
     pub incidents: Vec<IncidentSummary>,
-    /// Overrides `ZULIP_REMINDER_STREAM` for this message when present.
-    #[serde(default)]
-    pub stream: Option<String>,
-    /// Overrides `ZULIP_REMINDER_TOPIC` for this message when present.
-    #[serde(default)]
-    pub topic: Option<String>,
-    /// Logical environment this digest was built from (e.g. `staging`,
-    /// `production`). Shown in the message header so a reminder is
-    /// self-identifying regardless of which stream/topic it lands in.
-    /// Overrides `ENVIRONMENT_NAME` for this message when present; otherwise
-    /// falls back to the service's configured environment.
-    #[serde(default)]
-    pub environment: Option<String>,
 }

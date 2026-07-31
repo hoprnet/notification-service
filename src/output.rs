@@ -122,10 +122,10 @@ pub async fn send_incident(incident: &Incident, config: &Config) {
 /// since this is a point-in-time digest rather than a per-entity update.
 ///
 /// # Routing
-/// - **Stream** — `reminder.stream` if present, else `ZULIP_REMINDER_STREAM`
-///   (default `Town Square`).
-/// - **Topic** — `reminder.topic` if present, else `ZULIP_REMINDER_TOPIC`
-///   (default `daily updates`).
+/// - **Stream** — `ZULIP_REMINDER_STREAM` (default `Town Square`), fixed per
+///   deployment, not overridable per-request.
+/// - **Topic** — `ZULIP_REMINDER_TOPIC` (default `daily updates`), fixed per
+///   deployment, not overridable per-request.
 pub async fn send_reminder(reminder: &Reminder, config: &Config) {
     let markdown = formatter::reminder_to_markdown(reminder, config);
 
@@ -136,8 +136,8 @@ pub async fn send_reminder(reminder: &Reminder, config: &Config) {
         return;
     }
 
-    let stream = reminder.stream.as_deref().unwrap_or(&config.reminder_default_stream);
-    let topic = reminder.topic.as_deref().unwrap_or(&config.reminder_default_topic);
+    let stream = &config.reminder_default_stream;
+    let topic = &config.reminder_default_topic;
 
     tracing::info!(
         stream,

@@ -1,5 +1,4 @@
 {
-  "environment": "staging",
   "alerts": [
     {
       "alertname": "KubePodCrashLooping",

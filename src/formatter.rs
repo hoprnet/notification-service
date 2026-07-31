@@ -239,8 +239,7 @@ pub fn incident_to_markdown(incident: &Incident, config: &Config) -> String {
 pub fn reminder_to_markdown(reminder: &Reminder, config: &Config) -> String {
     let mut out = String::new();
 
-    let environment = reminder.environment.as_deref().unwrap_or(&config.environment_name);
-    writeln!(out, "## 📅 Daily reminder — {}", environment).unwrap();
+    writeln!(out, "## 📅 Daily reminder — {}", config.environment_name).unwrap();
     writeln!(out).unwrap();
 
     if ! reminder.alerts.is_empty() {
@@ -675,9 +674,6 @@ mod tests {
                 incident_id: "4ee4a928-7c16-4a18-b2dd-be1e17bb8aa6".into(),
                 start_time: "2026-05-26T09:06:25.310Z".into(),
             }],
-            stream: None,
-            topic: None,
-            environment: Some("staging".into()),
         }
     }
 
@@ -730,30 +726,16 @@ mod tests {
 
     #[test]
     fn reminder_empty_sections_are_omitted() {
-        let reminder = Reminder {
-            alerts: vec![],
-            incidents: vec![],
-            stream: None,
-            topic: None,
-            environment: Some("staging".into()),
-        };
+        let reminder = Reminder { alerts: vec![], incidents: vec![] };
         let msg = reminder_to_markdown(&reminder, &make_config(""));
         assert!(!msg.contains("Open alerts"));
         assert!(!msg.contains("Open incidents"));
     }
 
     #[test]
-    fn reminder_header_shows_explicit_environment() {
-        let msg = reminder_to_markdown(&make_reminder(), &make_config(""));
-        assert!(msg.contains("Daily reminder — staging"));
-    }
-
-    #[test]
-    fn reminder_header_falls_back_to_config_environment() {
-        let mut reminder = make_reminder();
-        reminder.environment = None;
+    fn reminder_header_shows_config_environment() {
         // make_config sets environment_name to "test".
-        let msg = reminder_to_markdown(&reminder, &make_config(""));
+        let msg = reminder_to_markdown(&make_reminder(), &make_config(""));
         assert!(msg.contains("Daily reminder — test"));
     }
 
