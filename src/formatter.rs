@@ -262,8 +262,9 @@ pub fn reminder_to_markdown(reminder: &Reminder, config: &Config) -> String {
     for incident in &reminder.incidents {
         write!(
             out,
-            "- '{}' is opened for {} days and has {} alerts.",
+            "- '{}' assigned to {} is opened for {} days and has {} alerts.",
             sanitize_line(&incident.name),
+            incident.assignee.as_deref().unwrap_or("—"),
             days_opened_cell(&incident.start_time),
             incident.alerts_count,
         )
