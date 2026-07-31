@@ -1,0 +1,33 @@
+{
+  "id": "KubePodCrashLooping",
+  "name": "KubePodCrashLooping",
+  "status": "firing",
+  "severity": "warning",
+  "lastReceived": "2026-05-26T16:41:56.493Z",
+  "firingStartTime": null,
+  "firingCounter": 2,
+  "description": "Application crash-test-app has a container stuck in a restart loop and failing to start for at least 15 minutes.",
+  "labels": {
+    "alertname": "KubePodCrashLooping",
+    "container": "crash-test",
+    "app_kubernetes_io_name": "crash-test-app",
+    "infrastructure": "gnosisvpn",
+    "namespace": "monitoring",
+    "network": "rotsee",
+    "pod": "crash-test",
+    "reason": "CrashLoopBackOff",
+    "severity": "warning"
+  },
+  "fingerprint": "b58e9384887fe382",
+  "assignee": null,
+  "startedAt": "2026-05-26 09:06:25.383000",
+  "endsAt": null,
+  "namespace": "monitoring",
+  "annotations": {
+    "runbook_url": "https://github.com/hoprnet/gitops/blob/master/operations/runbooks/KubePodCrashLooping.md",
+    "summary": "Application crash-test-app is repeatedly crashing and cannot start."
+  },
+  "generatorURL": "http://prometheus.staging.hoprnet.link/graph?g0.expr=up",
+  "incident_id": "4ee4a928-7c16-4a18-b2dd-be1e17bb8aa6",
+  "incident_name": "My first incident"
+}

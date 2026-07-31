@@ -38,6 +38,22 @@ curl -X POST http://localhost:8080/incidents \
   -d @test/incident-example.json
 ```
 
+## Alert with linked incident
+
+`POST /alert-with-incident` accepts the same shape as `POST /alerts` plus
+`incident_id`/`incident_name`. Instead of routing to the namespace's
+`alerts-{environment}` topic, it posts a short `{AlertName} - {Description}`
+line (plus a Keep link, when configured) into the incident's own Zulip topic
+— the same topic `POST /incidents` posts to for that incident.
+
+### alert-with-incident-example
+
+```bash
+curl -X POST http://localhost:8080/alert-with-incident \
+  -H "Content-Type: application/json" \
+  -d @test/alert-with-incident-example.json
+```
+
 ## Reminders
 
 `POST /reminders` accepts a pre-built digest of currently open alerts and
