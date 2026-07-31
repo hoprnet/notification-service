@@ -42,7 +42,7 @@ curl -X POST http://localhost:8080/incidents \
 
 `POST /reminders` accepts a pre-built digest of currently open alerts and
 incidents (e.g. produced by a K8s CronJob that queries the Keep database) and
-posts it to Zulip as a single Markdown-table message. The destination stream,
+posts it to Zulip as a single Markdown bullet-list message. The destination stream,
 topic, and environment label are fixed per-deployment via
 `ZULIP_REMINDER_STREAM` (default `Town Square`), `ZULIP_REMINDER_TOPIC`
 (default `daily updates`), and `ENVIRONMENT_NAME` — set in the Helm chart,

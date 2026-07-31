@@ -235,57 +235,41 @@ pub fn incident_to_markdown(incident: &Incident, config: &Config) -> String {
 // ---------------------------------------------------------------------------
 
 /// Render a [`Reminder`] (daily digest of open alerts/incidents) as a
-/// Zulip-flavoured Markdown message with one table per section.
+/// Zulip-flavoured Markdown bullet list, alerts followed by incidents.
 pub fn reminder_to_markdown(reminder: &Reminder, config: &Config) -> String {
     let mut out = String::new();
 
-    writeln!(out, "## 📅 Daily reminder — {}", config.environment_name).unwrap();
+    writeln!(out, "### Open alerts and incidents in {}", config.environment_name).unwrap();
     writeln!(out).unwrap();
 
-    if ! reminder.alerts.is_empty() {
-        writeln!(out, "### 🔥 Open alerts ({})", reminder.alerts.len()).unwrap();
-        writeln!(out).unwrap();
-        writeln!(out, "| Alert | Namespace | Application | Days opened | Occurrences |").unwrap();
-        writeln!(out, "|---|---|---|---|---|").unwrap();
-        for alert in &reminder.alerts {
-            let name = match config.keep_alert_url(&alert.fingerprint) {
-                Some(url) => format!("[{}]({})", table_cell(&alert.alertname), url),
-                None => table_cell(&alert.alertname),
-            };
-            writeln!(
-                out,
-                "| {} | {} | {} | {} | {} |",
-                name,
-                alert.namespace.as_deref().map(table_cell).unwrap_or_else(|| "—".to_string()),
-                alert.application.as_deref().map(table_cell).unwrap_or_else(|| "—".to_string()),
-                days_opened_cell(&alert.start_time),
-                alert.occurrences,
-            )
-            .unwrap();
+    for alert in &reminder.alerts {
+        write!(
+            out,
+            "- '[{}] {} - {}' is opened for {} days and has {} occurrences.",
+            sanitize_line(alert.namespace.as_deref().unwrap_or("—")),
+            sanitize_line(alert.application.as_deref().unwrap_or("—")),
+            sanitize_line(&alert.alertname),
+            days_opened_cell(&alert.start_time),
+            alert.occurrences,
+        )
+        .unwrap();
+        if let Some(url) = config.keep_alert_url(&alert.fingerprint) {
+            write!(out, " [View alert]({})", url).unwrap();
         }
         writeln!(out).unwrap();
     }
 
-
-    if ! reminder.incidents.is_empty() {
-        writeln!(out, "### 🚨 Open incidents ({})", reminder.incidents.len()).unwrap();
-        writeln!(out).unwrap();
-        writeln!(out, "| Incident | Assignee | Alerts | Days opened |").unwrap();
-        writeln!(out, "|---|---|---|---|").unwrap();
-        for incident in &reminder.incidents {
-            let name = match config.keep_incident_url(&incident.incident_id) {
-                Some(url) => format!("[{}]({})", table_cell(&incident.name), url),
-                None => table_cell(&incident.name),
-            };
-            writeln!(
-                out,
-                "| {} | {} | {} | {} |",
-                name,
-                incident.assignee.as_deref().map(table_cell).unwrap_or_else(|| "Unassigned".to_string()),
-                incident.alerts_count,
-                days_opened_cell(&incident.start_time),
-            )
-            .unwrap();
+    for incident in &reminder.incidents {
+        write!(
+            out,
+            "- '{}' is opened for {} days and has {} alerts.",
+            sanitize_line(&incident.name),
+            days_opened_cell(&incident.start_time),
+            incident.alerts_count,
+        )
+        .unwrap();
+        if let Some(url) = config.keep_incident_url(&incident.incident_id) {
+            write!(out, " [View incident]({})", url).unwrap();
         }
         writeln!(out).unwrap();
     }
@@ -293,9 +277,9 @@ pub fn reminder_to_markdown(reminder: &Reminder, config: &Config) -> String {
     out
 }
 
-/// Escape characters that would otherwise break a Markdown table cell.
-fn table_cell(s: &str) -> String {
-    s.replace('|', "\\|").replace('\n', " ")
+/// Collapse newlines so a value can't break out of its bullet line.
+fn sanitize_line(s: &str) -> String {
+    s.replace('\n', " ")
 }
 
 /// Render the "Days opened" cell for a `startTime` string — `"3"` when the
@@ -657,13 +641,18 @@ mod tests {
 
     // ── Reminder ─────────────────────────────────────────────────────────────
 
+    /// `start_time` is 66 days before "now" so tests can assert an exact,
+    /// stable day count regardless of when they run.
     fn make_reminder() -> Reminder {
+        let sixty_six_days_ago = (Utc::now() - chrono::Duration::days(66))
+            .format("%Y-%m-%dT%H:%M:%S%.3fZ")
+            .to_string();
         Reminder {
             alerts: vec![AlertSummary {
                 alertname: "KubePodCrashLooping".into(),
                 namespace: Some("monitoring".into()),
                 application: Some("crash-test-app".into()),
-                start_time: "2026-05-26T09:06:25.383Z".into(),
+                start_time: sixty_six_days_ago.clone(),
                 occurrences: 2,
                 fingerprint: "b58e9384887fe382".into(),
             }],
@@ -672,36 +661,30 @@ mod tests {
                 assignee: Some("developer@hoprnet.org".into()),
                 alerts_count: 2,
                 incident_id: "4ee4a928-7c16-4a18-b2dd-be1e17bb8aa6".into(),
-                start_time: "2026-05-26T09:06:25.310Z".into(),
+                start_time: sixty_six_days_ago,
             }],
         }
     }
 
     #[test]
-    fn reminder_renders_alert_and_incident_rows() {
+    fn reminder_header_names_environment() {
+        // make_config sets environment_name to "test".
         let msg = reminder_to_markdown(&make_reminder(), &make_config(""));
-        assert!(msg.contains("KubePodCrashLooping"));
-        assert!(msg.contains("monitoring"));
-        assert!(msg.contains("crash-test-app"));
-        assert!(msg.contains("| 2 |"));
-        assert!(msg.contains("My first incident"));
-        assert!(msg.contains("developer@hoprnet.org"));
+        assert!(msg.contains("### Open alerts and incidents in test"));
     }
 
     #[test]
-    fn reminder_incident_id_not_shown_as_bare_column() {
-        // The incident ID is only surfaced via the Keep link, not as its own column.
+    fn reminder_renders_alert_bullet() {
         let msg = reminder_to_markdown(&make_reminder(), &make_config(""));
-        assert!(!msg.contains("4ee4a928-7c16-4a18-b2dd-be1e17bb8aa6"));
-        assert!(!msg.contains("Incident ID"));
+        assert!(msg.contains(
+            "- monitoring crash-test-app - KubePodCrashLooping is opened for 66 days and has 2 occurrences."
+        ));
     }
 
     #[test]
-    fn reminder_has_days_opened_column_and_no_start_time_column() {
+    fn reminder_renders_incident_bullet() {
         let msg = reminder_to_markdown(&make_reminder(), &make_config(""));
-        assert!(msg.contains("| Alert | Namespace | Application | Days opened | Occurrences |"));
-        assert!(msg.contains("| Incident | Assignee | Alerts | Days opened |"));
-        assert!(!msg.contains("Start time"));
+        assert!(msg.contains("- My first incident is opened for 66 days and has 2 alerts."));
     }
 
     #[test]
@@ -712,7 +695,7 @@ mod tests {
             .to_string();
         reminder.alerts[0].start_time = ten_days_ago;
         let msg = reminder_to_markdown(&reminder, &make_config(""));
-        assert!(msg.contains("| 10 |"));
+        assert!(msg.contains("is opened for 10 days"));
     }
 
     #[test]
@@ -721,49 +704,31 @@ mod tests {
         reminder.alerts[0].start_time = "not-a-date".into();
         reminder.incidents[0].start_time = "not-a-date".into();
         let msg = reminder_to_markdown(&reminder, &make_config(""));
-        assert!(msg.contains("| — |"));
+        assert!(msg.contains("is opened for — days"));
     }
 
     #[test]
-    fn reminder_empty_sections_are_omitted() {
+    fn reminder_empty_has_no_bullets() {
         let reminder = Reminder { alerts: vec![], incidents: vec![] };
         let msg = reminder_to_markdown(&reminder, &make_config(""));
-        assert!(!msg.contains("Open alerts"));
-        assert!(!msg.contains("Open incidents"));
-    }
-
-    #[test]
-    fn reminder_header_shows_config_environment() {
-        // make_config sets environment_name to "test".
-        let msg = reminder_to_markdown(&make_reminder(), &make_config(""));
-        assert!(msg.contains("Daily reminder — test"));
-    }
-
-    #[test]
-    fn reminder_omits_incidents_section_when_only_alerts_present() {
-        let mut reminder = make_reminder();
-        reminder.incidents.clear();
-        let msg = reminder_to_markdown(&reminder, &make_config(""));
-        assert!(msg.contains("Open alerts"));
-        assert!(!msg.contains("Open incidents"));
+        assert!(!msg.contains("- "));
     }
 
     #[test]
     fn reminder_uses_keep_urls_when_configured() {
         let msg = reminder_to_markdown(&make_reminder(), &make_config("https://incidents.example.com"));
         assert!(msg.contains(
-            "[KubePodCrashLooping](https://incidents.example.com/alerts/feed?alertPayloadFingerprint=b58e9384887fe382)"
+            "[View alert](https://incidents.example.com/alerts/feed?alertPayloadFingerprint=b58e9384887fe382)"
         ));
         assert!(msg.contains(
-            "[My first incident](https://incidents.example.com/incidents/4ee4a928-7c16-4a18-b2dd-be1e17bb8aa6/alerts)"
+            "[View incident](https://incidents.example.com/incidents/4ee4a928-7c16-4a18-b2dd-be1e17bb8aa6/alerts)"
         ));
     }
 
     #[test]
-    fn reminder_unassigned_incident_shows_placeholder() {
-        let mut reminder = make_reminder();
-        reminder.incidents[0].assignee = None;
-        let msg = reminder_to_markdown(&reminder, &make_config(""));
-        assert!(msg.contains("Unassigned"));
+    fn reminder_omits_links_when_keep_not_configured() {
+        let msg = reminder_to_markdown(&make_reminder(), &make_config(""));
+        assert!(!msg.contains("[View alert]"));
+        assert!(!msg.contains("[View incident]"));
     }
 }
