@@ -1,0 +1,29 @@
+{
+  "alerts": [
+    {
+      "alertname": "KubePodCrashLooping",
+      "namespace": "monitoring",
+      "application": "crash-test-app",
+      "startTime": "2026-05-26T09:06:25.383Z",
+      "occurrences": 2,
+      "fingerprint": "b58e9384887fe382"
+    },
+    {
+      "alertname": "KubeContainerWaiting",
+      "namespace": "monitoring",
+      "application": "crash-test-app",
+      "startTime": "2026-05-26T09:10:55.372Z",
+      "occurrences": 40,
+      "fingerprint": "ca4b0eaa241839c4"
+    }
+  ],
+  "incidents": [
+    {
+      "name": "My first incident",
+      "assignee": "developer@hoprnet.org",
+      "alerts_count": 2,
+      "incident_id": "4ee4a928-7c16-4a18-b2dd-be1e17bb8aa6",
+      "startTime": "2026-05-26T09:06:25.310Z"
+    }
+  ]
+}

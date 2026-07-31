@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use chrono::{DateTime, NaiveDateTime, Utc};
 
-use crate::{config::Config, models::{Alert, Incident}};
+use crate::{config::Config, models::{Alert, Incident, Reminder}};
 
 /// Render an [`Alert`] as a Zulip-flavoured Markdown message.
 ///
@@ -231,6 +231,80 @@ pub fn incident_to_markdown(incident: &Incident, config: &Config) -> String {
 }
 
 // ---------------------------------------------------------------------------
+// Reminder formatter
+// ---------------------------------------------------------------------------
+
+/// Render a [`Reminder`] (daily digest of open alerts/incidents) as a
+/// Zulip-flavoured Markdown message with one table per section.
+pub fn reminder_to_markdown(reminder: &Reminder, config: &Config) -> String {
+    let mut out = String::new();
+
+    writeln!(out, "## 📅 Daily reminder — {}", config.environment_name).unwrap();
+    writeln!(out).unwrap();
+
+    if ! reminder.alerts.is_empty() {
+        writeln!(out, "### 🔥 Open alerts ({})", reminder.alerts.len()).unwrap();
+        writeln!(out).unwrap();
+        writeln!(out, "| Alert | Namespace | Application | Days opened | Occurrences |").unwrap();
+        writeln!(out, "|---|---|---|---|---|").unwrap();
+        for alert in &reminder.alerts {
+            let name = match config.keep_alert_url(&alert.fingerprint) {
+                Some(url) => format!("[{}]({})", table_cell(&alert.alertname), url),
+                None => table_cell(&alert.alertname),
+            };
+            writeln!(
+                out,
+                "| {} | {} | {} | {} | {} |",
+                name,
+                alert.namespace.as_deref().map(table_cell).unwrap_or_else(|| "—".to_string()),
+                alert.application.as_deref().map(table_cell).unwrap_or_else(|| "—".to_string()),
+                days_opened_cell(&alert.start_time),
+                alert.occurrences,
+            )
+            .unwrap();
+        }
+        writeln!(out).unwrap();
+    }
+
+
+    if ! reminder.incidents.is_empty() {
+        writeln!(out, "### 🚨 Open incidents ({})", reminder.incidents.len()).unwrap();
+        writeln!(out).unwrap();
+        writeln!(out, "| Incident | Assignee | Alerts | Days opened |").unwrap();
+        writeln!(out, "|---|---|---|---|").unwrap();
+        for incident in &reminder.incidents {
+            let name = match config.keep_incident_url(&incident.incident_id) {
+                Some(url) => format!("[{}]({})", table_cell(&incident.name), url),
+                None => table_cell(&incident.name),
+            };
+            writeln!(
+                out,
+                "| {} | {} | {} | {} |",
+                name,
+                incident.assignee.as_deref().map(table_cell).unwrap_or_else(|| "Unassigned".to_string()),
+                incident.alerts_count,
+                days_opened_cell(&incident.start_time),
+            )
+            .unwrap();
+        }
+        writeln!(out).unwrap();
+    }
+
+    out
+}
+
+/// Escape characters that would otherwise break a Markdown table cell.
+fn table_cell(s: &str) -> String {
+    s.replace('|', "\\|").replace('\n', " ")
+}
+
+/// Render the "Days opened" cell for a `startTime` string — `"3"` when the
+/// timestamp parses, `"—"` otherwise.
+fn days_opened_cell(start_time: &str) -> String {
+    days_since(start_time).map(|d| d.to_string()).unwrap_or_else(|| "—".to_string())
+}
+
+// ---------------------------------------------------------------------------
 // Graylog URL builder
 // ---------------------------------------------------------------------------
 
@@ -262,27 +336,35 @@ fn build_graylog_url(alert: &Alert, config: &Config) -> Option<String> {
     ))
 }
 
-/// Try to parse a datetime string in several formats and return an ISO 8601
-/// UTC string (`2026-05-26T09:06:25.383Z`).  Returns `None` if no format
-/// matches.
-fn parse_datetime_to_iso(s: &str) -> Option<String> {
+/// Try to parse a datetime string in several formats used across Keep/Prometheus
+/// payloads. Returns `None` if no format matches.
+fn parse_datetime(s: &str) -> Option<DateTime<Utc>> {
     // "2026-05-26 09:06:25.383000"  (space separator, microseconds)
     if let Ok(naive) = NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f") {
-        return Some(naive.and_utc().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string());
+        return Some(naive.and_utc());
     }
     // "2026-05-26T09:06:25.265Z"  (ISO 8601 with Z)
     if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
-        return Some(
-            dt.with_timezone(&Utc)
-                .format("%Y-%m-%dT%H:%M:%S%.3fZ")
-                .to_string(),
-        );
+        return Some(dt.with_timezone(&Utc));
     }
     // "2026-05-26T09:06:25.383000"  (T separator, no timezone)
     if let Ok(naive) = NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S%.f") {
-        return Some(naive.and_utc().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string());
+        return Some(naive.and_utc());
     }
     None
+}
+
+/// Parse a datetime string and return an ISO 8601 UTC string
+/// (`2026-05-26T09:06:25.383Z`). Returns `None` if no format matches.
+fn parse_datetime_to_iso(s: &str) -> Option<String> {
+    parse_datetime(s).map(|dt| dt.format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string())
+}
+
+/// Number of whole days elapsed between `s` and now. Returns `None` if `s`
+/// doesn't match any known datetime format. Negative results (a start time in
+/// the future) are clamped to `0`.
+fn days_since(s: &str) -> Option<i64> {
+    parse_datetime(s).map(|dt| (Utc::now() - dt).num_days().max(0))
 }
 
 /// Percent-encode special characters for use inside a query-string value.
@@ -359,7 +441,7 @@ fn strip_html(s: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{AlertAnnotations, AlertLabels};
+    use crate::models::{AlertAnnotations, AlertLabels, AlertSummary, IncidentSummary};
 
     fn make_config(keep_base_url: &str) -> Config {
         Config {
@@ -375,6 +457,8 @@ mod tests {
             zulip_enabled: false,
             message_ttl_days: 7,
             zulip_request_timeout_secs: 10,
+            reminder_default_stream: "Town Square".to_string(),
+            reminder_default_topic: "Daily".to_string(),
         }
     }
 
@@ -569,5 +653,117 @@ mod tests {
         assert!(!msg.contains("Last seen"));
         assert!(!msg.contains("Ends"));
         assert!(!msg.contains("Fingerprint"));
+    }
+
+    // ── Reminder ─────────────────────────────────────────────────────────────
+
+    fn make_reminder() -> Reminder {
+        Reminder {
+            alerts: vec![AlertSummary {
+                alertname: "KubePodCrashLooping".into(),
+                namespace: Some("monitoring".into()),
+                application: Some("crash-test-app".into()),
+                start_time: "2026-05-26T09:06:25.383Z".into(),
+                occurrences: 2,
+                fingerprint: "b58e9384887fe382".into(),
+            }],
+            incidents: vec![IncidentSummary {
+                name: "My first incident".into(),
+                assignee: Some("developer@hoprnet.org".into()),
+                alerts_count: 2,
+                incident_id: "4ee4a928-7c16-4a18-b2dd-be1e17bb8aa6".into(),
+                start_time: "2026-05-26T09:06:25.310Z".into(),
+            }],
+        }
+    }
+
+    #[test]
+    fn reminder_renders_alert_and_incident_rows() {
+        let msg = reminder_to_markdown(&make_reminder(), &make_config(""));
+        assert!(msg.contains("KubePodCrashLooping"));
+        assert!(msg.contains("monitoring"));
+        assert!(msg.contains("crash-test-app"));
+        assert!(msg.contains("| 2 |"));
+        assert!(msg.contains("My first incident"));
+        assert!(msg.contains("developer@hoprnet.org"));
+    }
+
+    #[test]
+    fn reminder_incident_id_not_shown_as_bare_column() {
+        // The incident ID is only surfaced via the Keep link, not as its own column.
+        let msg = reminder_to_markdown(&make_reminder(), &make_config(""));
+        assert!(!msg.contains("4ee4a928-7c16-4a18-b2dd-be1e17bb8aa6"));
+        assert!(!msg.contains("Incident ID"));
+    }
+
+    #[test]
+    fn reminder_has_days_opened_column_and_no_start_time_column() {
+        let msg = reminder_to_markdown(&make_reminder(), &make_config(""));
+        assert!(msg.contains("| Alert | Namespace | Application | Days opened | Occurrences |"));
+        assert!(msg.contains("| Incident | Assignee | Alerts | Days opened |"));
+        assert!(!msg.contains("Start time"));
+    }
+
+    #[test]
+    fn reminder_days_opened_computed_from_start_time() {
+        let mut reminder = make_reminder();
+        let ten_days_ago = (Utc::now() - chrono::Duration::days(10))
+            .format("%Y-%m-%dT%H:%M:%S%.3fZ")
+            .to_string();
+        reminder.alerts[0].start_time = ten_days_ago;
+        let msg = reminder_to_markdown(&reminder, &make_config(""));
+        assert!(msg.contains("| 10 |"));
+    }
+
+    #[test]
+    fn reminder_days_opened_placeholder_when_unparseable() {
+        let mut reminder = make_reminder();
+        reminder.alerts[0].start_time = "not-a-date".into();
+        reminder.incidents[0].start_time = "not-a-date".into();
+        let msg = reminder_to_markdown(&reminder, &make_config(""));
+        assert!(msg.contains("| — |"));
+    }
+
+    #[test]
+    fn reminder_empty_sections_are_omitted() {
+        let reminder = Reminder { alerts: vec![], incidents: vec![] };
+        let msg = reminder_to_markdown(&reminder, &make_config(""));
+        assert!(!msg.contains("Open alerts"));
+        assert!(!msg.contains("Open incidents"));
+    }
+
+    #[test]
+    fn reminder_header_shows_config_environment() {
+        // make_config sets environment_name to "test".
+        let msg = reminder_to_markdown(&make_reminder(), &make_config(""));
+        assert!(msg.contains("Daily reminder — test"));
+    }
+
+    #[test]
+    fn reminder_omits_incidents_section_when_only_alerts_present() {
+        let mut reminder = make_reminder();
+        reminder.incidents.clear();
+        let msg = reminder_to_markdown(&reminder, &make_config(""));
+        assert!(msg.contains("Open alerts"));
+        assert!(!msg.contains("Open incidents"));
+    }
+
+    #[test]
+    fn reminder_uses_keep_urls_when_configured() {
+        let msg = reminder_to_markdown(&make_reminder(), &make_config("https://incidents.example.com"));
+        assert!(msg.contains(
+            "[KubePodCrashLooping](https://incidents.example.com/alerts/feed?alertPayloadFingerprint=b58e9384887fe382)"
+        ));
+        assert!(msg.contains(
+            "[My first incident](https://incidents.example.com/incidents/4ee4a928-7c16-4a18-b2dd-be1e17bb8aa6/alerts)"
+        ));
+    }
+
+    #[test]
+    fn reminder_unassigned_incident_shows_placeholder() {
+        let mut reminder = make_reminder();
+        reminder.incidents[0].assignee = None;
+        let msg = reminder_to_markdown(&reminder, &make_config(""));
+        assert!(msg.contains("Unassigned"));
     }
 }
