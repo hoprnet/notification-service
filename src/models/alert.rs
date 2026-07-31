@@ -1,6 +1,8 @@
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 
+use super::{nullable_str, opt_str, req_str, req_u64};
+
 // ---------------------------------------------------------------------------
 // Sub-structs
 // ---------------------------------------------------------------------------
@@ -81,61 +83,6 @@ pub struct Alert {
     pub annotations: AlertAnnotations,
 }
 
-// ---------------------------------------------------------------------------
-// Extraction helpers
-// ---------------------------------------------------------------------------
-
-/// Extract a required non-null string; record the JSON-pointer path on failure.
-fn req_str(v: &serde_json::Value, path: &str, missing: &mut Vec<String>) -> Option<String> {
-    match v.pointer(path) {
-        Some(serde_json::Value::String(s)) => Some(s.clone()),
-        _ => {
-            missing.push(path.to_string());
-            None
-        }
-    }
-}
-
-/// Extract a required non-null unsigned integer; record the path on failure.
-fn req_u64(v: &serde_json::Value, path: &str, missing: &mut Vec<String>) -> Option<u64> {
-    match v.pointer(path).and_then(|val| val.as_u64()) {
-        Some(n) => Some(n),
-        None => {
-            missing.push(path.to_string());
-            None
-        }
-    }
-}
-
-/// Extract an optional string — absent or non-string → `None`, no error.
-fn opt_str(v: &serde_json::Value, path: &str) -> Option<String> {
-    v.pointer(path)
-        .and_then(|val| val.as_str())
-        .map(str::to_string)
-}
-
-/// Extract a required-but-nullable string:
-/// - Key present, value is a string  → `Some(String)` (no error)
-/// - Key present, value is JSON null  → `None`         (no error)
-/// - Key absent or unexpected type    → records path in `missing`, returns `None`
-///
-/// Use this for fields that must be present in every payload but may carry a
-/// `null` value (e.g. `assignee` when unassigned).
-fn nullable_str(v: &serde_json::Value, path: &str, missing: &mut Vec<String>) -> Option<String> {
-    match v.pointer(path) {
-        Some(serde_json::Value::String(s)) => Some(s.clone()),
-        Some(serde_json::Value::Null) => None,
-        _ => {
-            missing.push(path.to_string());
-            None
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Alert::from_value
-// ---------------------------------------------------------------------------
-
 impl Alert {
     /// Validate and extract well-known fields from an arbitrary JSON value.
     ///
@@ -210,62 +157,6 @@ impl Alert {
             .clone()
             .or_else(|| self.firing_start_time.clone())
             .unwrap_or_else(|| Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string())
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Incident — validated extraction from a Keep incident payload
-// ---------------------------------------------------------------------------
-
-/// Incident fields validated and extracted from an incoming Keep incident payload.
-#[derive(Debug, Serialize, Clone)]
-pub struct Incident {
-    pub id: String,
-    /// Used as the Zulip topic name.
-    pub topic_name: String,
-    pub description: Option<String>,
-    pub assignee: Option<String>,
-    pub severity: Option<String>,
-    pub alerts_count: Option<u64>,
-    /// Linear issue identifier (e.g. `CORE-123`).
-    pub linear_id: Option<String>,
-    /// Linear issue URL.
-    pub linear_url: Option<String>,
-    /// Kubernetes namespace — used to route to the correct Zulip stream.
-    pub namespace: Option<String>,
-    pub status: Option<String>,
-}
-
-impl Incident {
-    /// Validate and extract well-known fields from an arbitrary JSON value.
-    ///
-    /// # Errors
-    /// Returns `Err(missing)` listing every required field that was absent or
-    /// had an unexpected type.
-    pub fn from_value(v: &serde_json::Value) -> Result<Self, Vec<String>> {
-        let mut missing: Vec<String> = Vec::new();
-
-        let id = req_str(v, "/id", &mut missing);
-        let topic_name = req_str(v, "/topic_name", &mut missing);
-
-        if !missing.is_empty() {
-            return Err(missing);
-        }
-
-        Ok(Incident {
-            id: id.unwrap(),
-            topic_name: topic_name.unwrap(),
-            description: opt_str(v, "/description"),
-            assignee: opt_str(v, "/assignee"),
-            severity: opt_str(v, "/severity"),
-            alerts_count: v.pointer("/alerts_count").and_then(|val| {
-                val.as_u64().or_else(|| val.as_str().and_then(|s| s.parse().ok()))
-            }),
-            linear_id: opt_str(v, "/linear_id"),
-            linear_url: opt_str(v, "/linear_url"),
-            namespace: opt_str(v, "/namespace"),
-            status: opt_str(v, "/status"),
-        })
     }
 }
 

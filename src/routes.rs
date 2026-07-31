@@ -6,7 +6,7 @@ use axum::{
 };
 use serde_json::json;
 
-use crate::{models::{Alert, Incident}, output, processing, AppState};
+use crate::{models::{Alert, Incident, Reminder}, output, processing, AppState};
 
 /// `POST /incident` — receive a Keep incident payload, format it, and post a
 /// new Zulip topic.
@@ -114,6 +114,36 @@ pub async fn receive_alert(
             "status": "processed",
             "id": enriched.alert.id,
         })),
+    )
+        .into_response()
+}
+
+/// `POST /reminders` — receive a daily digest of open alerts and incidents
+/// (built by an external K8s CronJob that queries the Keep database) and post
+/// it as a single Markdown table message to Zulip.
+///
+/// Unlike `/alerts` and `/incidents`, the payload shape is fixed and produced
+/// internally, so it is deserialized directly via [`Reminder`] rather than
+/// validated field-by-field; malformed JSON is rejected by the `Json`
+/// extractor with `400 Bad Request`.
+///
+/// # Responses
+/// - `200 OK` — reminder accepted and dispatched.
+pub async fn receive_reminder(
+    State(state): State<AppState>,
+    Json(reminder): Json<Reminder>,
+) -> Response {
+    tracing::info!(
+        alerts = reminder.alerts.len(),
+        incidents = reminder.incidents.len(),
+        "Received daily reminder"
+    );
+
+    output::send_reminder(&reminder, &state.config).await;
+
+    (
+        StatusCode::OK,
+        Json(json!({ "status": "processed" })),
     )
         .into_response()
 }

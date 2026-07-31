@@ -51,6 +51,16 @@ pub struct Config {
     /// Timeout in seconds applied to every outbound Zulip HTTP request.
     /// Defaults to `10`.  Controlled by `ZULIP_REQUEST_TIMEOUT_SECS`.
     pub zulip_request_timeout_secs: u64,
+
+    /// Default Zulip stream for the daily open-alerts/incidents reminder.
+    /// Defaults to `Town Square`.  Controlled by `ZULIP_REMINDER_STREAM`.
+    /// Overridable per-request via the `stream` field of the `/reminders` payload.
+    pub reminder_default_stream: String,
+
+    /// Default Zulip topic for the daily open-alerts/incidents reminder.
+    /// Defaults to `Daily`.  Controlled by `ZULIP_REMINDER_TOPIC`.
+    /// Overridable per-request via the `topic` field of the `/reminders` payload.
+    pub reminder_default_topic: String,
 }
 
 impl Config {
@@ -85,6 +95,8 @@ impl Config {
                 .ok()
                 .and_then(|v| v.trim().parse().ok())
                 .unwrap_or(10),
+            reminder_default_stream: env_or("ZULIP_REMINDER_STREAM", "Town Square"),
+            reminder_default_topic: env_or("ZULIP_REMINDER_TOPIC", "Daily"),
         }
     }
 
@@ -174,6 +186,14 @@ fn env_opt(key: &str) -> String {
     env::var(key)
         .map(|v| v.trim().to_string())
         .unwrap_or_default()
+}
+
+/// Read an environment variable, falling back to `default` when absent or empty.
+fn env_or(key: &str, default: &str) -> String {
+    match env::var(key) {
+        Ok(v) if !v.trim().is_empty() => v.trim().to_string(),
+        _ => default.to_string(),
+    }
 }
 
 /// Parse `ZULIP_NAMESPACE_STREAMS` from a JSON object string.

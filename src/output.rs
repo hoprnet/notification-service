@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 
 use serde::Deserialize;
 
-use crate::{config::Config, formatter, message_store::MessageStore, models::{EnrichedAlert, Incident}};
+use crate::{config::Config, formatter, message_store::MessageStore, models::{EnrichedAlert, Incident, Reminder}};
 
 /// Send or update a Zulip message for the given enriched alert.
 ///
@@ -113,6 +113,45 @@ pub async fn send_incident(incident: &Incident, config: &Config) {
     match post_zulip_message(&client, config, stream, &topic, &markdown).await {
         Ok(msg_id) => tracing::info!(msg_id, id = %incident.id, "Zulip incident topic created"),
         Err(e)     => tracing::error!(error = %e, id = %incident.id, "Failed to post Zulip incident"),
+    }
+}
+
+/// Post the daily open-alerts/incidents reminder as a new Zulip message.
+///
+/// Each call always creates a **new** message — there is no deduplication,
+/// since this is a point-in-time digest rather than a per-entity update.
+///
+/// # Routing
+/// - **Stream** — `reminder.stream` if present, else `ZULIP_REMINDER_STREAM`
+///   (default `Town Square`).
+/// - **Topic** — `reminder.topic` if present, else `ZULIP_REMINDER_TOPIC`
+///   (default `Daily`).
+pub async fn send_reminder(reminder: &Reminder, config: &Config) {
+    let markdown = formatter::reminder_to_markdown(reminder, config);
+
+    tracing::info!("Zulip reminder message preview:\n{}", markdown);
+
+    if config.zulip_enabled && !config.zulip_configured() {
+        tracing::warn!("Zulip is enabled but not fully configured — skipping");
+        return;
+    }
+
+    let stream = reminder.stream.as_deref().unwrap_or(&config.reminder_default_stream);
+    let topic = reminder.topic.as_deref().unwrap_or(&config.reminder_default_topic);
+
+    tracing::info!(
+        stream,
+        topic,
+        alerts = reminder.alerts.len(),
+        incidents = reminder.incidents.len(),
+        "Posting daily reminder"
+    );
+
+    let client = build_client(config);
+
+    match post_zulip_message(&client, config, stream, topic, &markdown).await {
+        Ok(msg_id) => tracing::info!(msg_id, "Zulip reminder posted"),
+        Err(e) => tracing::error!(error = %e, "Failed to post Zulip reminder"),
     }
 }
 

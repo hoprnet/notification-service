@@ -37,3 +37,22 @@ curl -X POST http://localhost:8080/incidents \
   -H "Content-Type: application/json" \
   -d @test/incident-example.json
 ```
+
+## Reminders
+
+`POST /reminders` accepts a pre-built digest of currently open alerts and
+incidents (e.g. produced by a K8s CronJob that queries the Keep database) and
+posts it to Zulip as a single Markdown-table message. `stream`/`topic`/
+`environment` are optional per-request overrides for `ZULIP_REMINDER_STREAM`
+(default `Town Square`), `ZULIP_REMINDER_TOPIC` (default `Daily`), and
+`ENVIRONMENT_NAME` respectively — the resolved environment is shown in the
+message header so a reminder is self-identifying regardless of which
+stream/topic it lands in.
+
+### reminder-example — open alerts and an open incident, explicit environment
+
+```bash
+curl -X POST http://localhost:8080/reminders \
+  -H "Content-Type: application/json" \
+  -d @test/reminder-example.json
+```

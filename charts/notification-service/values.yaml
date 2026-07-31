@@ -173,6 +173,12 @@ zulip:
   #     monitoring: devops-alerts
   #     production: prod-alerts
   namespaceStreams: {}
+  # Stream used for the daily open-alerts/incidents reminder (POST /reminders).
+  # Overridable per-request via the payload's "stream" field. Defaults to "Town Square".
+  reminderStream: "Town Square"
+  # Topic used for the daily open-alerts/incidents reminder (POST /reminders).
+  # Overridable per-request via the payload's "topic" field. Defaults to "Daily".
+  reminderTopic: "Daily"
 
 rust:
   # RUST_LOG sets the log level for the notification service. Defaults to "info".
