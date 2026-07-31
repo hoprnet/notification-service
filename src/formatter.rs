@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use chrono::{DateTime, NaiveDateTime, Utc};
 
-use crate::{config::Config, models::{Alert, Incident, Reminder}};
+use crate::{config::Config, models::{Alert, AlertWithIncident, Incident, Reminder}};
 
 /// Render an [`Alert`] as a Zulip-flavoured Markdown message.
 ///
@@ -225,6 +225,28 @@ pub fn incident_to_markdown(incident: &Incident, config: &Config) -> String {
     if !links.is_empty() {
         writeln!(out).unwrap();
         writeln!(out, "**Links:** {}", links.join(" · ")).unwrap();
+    }
+
+    out
+}
+
+// ---------------------------------------------------------------------------
+// AlertWithIncident formatter
+// ---------------------------------------------------------------------------
+
+/// Render an [`AlertWithIncident`] as a short Zulip-flavoured Markdown line:
+/// `{AlertName} - {Description}`, plus a Keep link when configured. Posted
+/// into the incident's own topic, which already carries the rest of the context.
+pub fn alert_with_incident_to_markdown(awi: &AlertWithIncident, config: &Config) -> String {
+    let mut out = match awi.alert.description.as_deref() {
+        Some(description) if !description.is_empty() => {
+            format!("{} - {}", awi.alert.name, description)
+        }
+        _ => awi.alert.name.clone(),
+    };
+
+    if let Some(url) = config.keep_alert_url(&awi.alert.fingerprint) {
+        out.push_str(&format!(" [View alert]({})", url));
     }
 
     out
@@ -640,6 +662,41 @@ mod tests {
         assert!(!msg.contains("Fingerprint"));
     }
 
+    // ── AlertWithIncident ────────────────────────────────────────────────────
+
+    fn make_alert_with_incident() -> AlertWithIncident {
+        AlertWithIncident {
+            alert: make_alert("firing", "critical"),
+            incident_id: "4ee4a928-7c16-4a18-b2dd-be1e17bb8aa6".into(),
+            incident_name: "My first incident".into(),
+        }
+    }
+
+    #[test]
+    fn alert_with_incident_renders_name_and_description() {
+        let mut awi = make_alert_with_incident();
+        awi.alert.description = Some("Pod is stuck in CrashLoopBackOff.".into());
+        let msg = alert_with_incident_to_markdown(&awi, &make_config(""));
+        assert_eq!(msg, "TestAlert - Pod is stuck in CrashLoopBackOff.");
+    }
+
+    #[test]
+    fn alert_with_incident_renders_name_only_when_no_description() {
+        let awi = make_alert_with_incident();
+        let msg = alert_with_incident_to_markdown(&awi, &make_config(""));
+        assert_eq!(msg, "TestAlert");
+    }
+
+    #[test]
+    fn alert_with_incident_appends_keep_link_when_configured() {
+        let awi = make_alert_with_incident();
+        let msg = alert_with_incident_to_markdown(&awi, &make_config("https://incidents.example.com"));
+        assert_eq!(
+            msg,
+            "TestAlert [View alert](https://incidents.example.com/alerts/feed?alertPayloadFingerprint=abc123def456)"
+        );
+    }
+
     // ── Reminder ─────────────────────────────────────────────────────────────
 
     /// `start_time` is 66 days before "now" so tests can assert an exact,
@@ -678,14 +735,16 @@ mod tests {
     fn reminder_renders_alert_bullet() {
         let msg = reminder_to_markdown(&make_reminder(), &make_config(""));
         assert!(msg.contains(
-            "- monitoring crash-test-app - KubePodCrashLooping is opened for 66 days and has 2 occurrences."
+            "- '[monitoring] crash-test-app - KubePodCrashLooping' is opened for 66 days and has 2 occurrences."
         ));
     }
 
     #[test]
     fn reminder_renders_incident_bullet() {
         let msg = reminder_to_markdown(&make_reminder(), &make_config(""));
-        assert!(msg.contains("- My first incident is opened for 66 days and has 2 alerts."));
+        assert!(msg.contains(
+            "- 'My first incident' assigned to developer@hoprnet.org is opened for 66 days and has 2 alerts."
+        ));
     }
 
     #[test]
