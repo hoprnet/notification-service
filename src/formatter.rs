@@ -162,7 +162,7 @@ pub fn to_markdown(alert: &Alert, config: &Config) -> String {
 /// Render a Keep [`Incident`] as a Zulip-flavoured Markdown message.
 ///
 /// # Layout
-/// Topic: `[inc] {severity_emoji} {topic_name}`
+/// Topic: `🚨 {topic_name}` (see [`Config::incident_topic`])
 ///
 /// ```text
 /// {severity_emoji} **{topic_name}**

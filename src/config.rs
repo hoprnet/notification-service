@@ -163,7 +163,7 @@ impl Config {
     /// so a message about the same incident always lands in the same topic
     /// regardless of which endpoint reported it.
     pub fn incident_topic(&self, incident_name: &str) -> String {
-        format!("[inc] {}", incident_name)
+        format!("🚨 {}", incident_name)
     }
 }
 
