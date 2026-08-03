@@ -267,7 +267,7 @@ pub fn reminder_to_markdown(reminder: &Reminder, config: &Config) -> String {
     for alert in &reminder.alerts {
         write!(
             out,
-            "- 🔥 '{} - {}' is opened for {} days and has {} occurrences.",
+            "- 🔥 {}: {} is opened for {} days and has {} occurrences.",
             sanitize_line(alert.application.as_deref().unwrap_or("—")),
             sanitize_line(&alert.alertname),
             days_opened_cell(&alert.start_time),
@@ -734,7 +734,7 @@ mod tests {
     fn reminder_renders_alert_bullet() {
         let msg = reminder_to_markdown(&make_reminder(), &make_config(""));
         assert!(msg.contains(
-            "- 🔥 'crash-test-app - KubePodCrashLooping' is opened for 66 days and has 2 occurrences."
+            "- 🔥 crash-test-app: KubePodCrashLooping is opened for 66 days and has 2 occurrences."
         ));
     }
 
