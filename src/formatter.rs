@@ -267,8 +267,7 @@ pub fn reminder_to_markdown(reminder: &Reminder, config: &Config) -> String {
     for alert in &reminder.alerts {
         write!(
             out,
-            "- '[{}] {} - {}' is opened for {} days and has {} occurrences.",
-            sanitize_line(alert.namespace.as_deref().unwrap_or("—")),
+            "- 🔥 '{} - {}' is opened for {} days and has {} occurrences.",
             sanitize_line(alert.application.as_deref().unwrap_or("—")),
             sanitize_line(&alert.alertname),
             days_opened_cell(&alert.start_time),
@@ -284,7 +283,7 @@ pub fn reminder_to_markdown(reminder: &Reminder, config: &Config) -> String {
     for incident in &reminder.incidents {
         write!(
             out,
-            "- '{}' assigned to {} is opened for {} days and has {} alerts.",
+            "- 🚨 '{}' assigned to {} is opened for {} days and has {} alerts.",
             sanitize_line(&incident.name),
             incident.assignee.as_deref().unwrap_or("—"),
             days_opened_cell(&incident.start_time),
@@ -735,7 +734,7 @@ mod tests {
     fn reminder_renders_alert_bullet() {
         let msg = reminder_to_markdown(&make_reminder(), &make_config(""));
         assert!(msg.contains(
-            "- '[monitoring] crash-test-app - KubePodCrashLooping' is opened for 66 days and has 2 occurrences."
+            "- 🔥 'crash-test-app - KubePodCrashLooping' is opened for 66 days and has 2 occurrences."
         ));
     }
 
@@ -743,8 +742,14 @@ mod tests {
     fn reminder_renders_incident_bullet() {
         let msg = reminder_to_markdown(&make_reminder(), &make_config(""));
         assert!(msg.contains(
-            "- 'My first incident' assigned to developer@hoprnet.org is opened for 66 days and has 2 alerts."
+            "- 🚨 'My first incident' assigned to developer@hoprnet.org is opened for 66 days and has 2 alerts."
         ));
+    }
+
+    #[test]
+    fn reminder_alert_bullet_omits_namespace() {
+        let msg = reminder_to_markdown(&make_reminder(), &make_config(""));
+        assert!(!msg.contains("monitoring"));
     }
 
     #[test]
