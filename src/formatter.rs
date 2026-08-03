@@ -240,9 +240,9 @@ pub fn incident_to_markdown(incident: &Incident, config: &Config) -> String {
 pub fn alert_with_incident_to_markdown(awi: &AlertWithIncident, config: &Config) -> String {
     let mut out = match awi.alert.description.as_deref() {
         Some(description) if !description.is_empty() => {
-            format!("{} - {}", awi.alert.name, description)
+            format!("🔥 {}: {}", awi.alert.name, description)
         }
-        _ => awi.alert.name.clone(),
+        _ => format!("🔥 {}", awi.alert.name),
     };
 
     if let Some(url) = config.keep_alert_url(&awi.alert.fingerprint) {
@@ -676,14 +676,14 @@ mod tests {
         let mut awi = make_alert_with_incident();
         awi.alert.description = Some("Pod is stuck in CrashLoopBackOff.".into());
         let msg = alert_with_incident_to_markdown(&awi, &make_config(""));
-        assert_eq!(msg, "TestAlert - Pod is stuck in CrashLoopBackOff.");
+        assert_eq!(msg, "🔥 TestAlert: Pod is stuck in CrashLoopBackOff.");
     }
 
     #[test]
     fn alert_with_incident_renders_name_only_when_no_description() {
         let awi = make_alert_with_incident();
         let msg = alert_with_incident_to_markdown(&awi, &make_config(""));
-        assert_eq!(msg, "TestAlert");
+        assert_eq!(msg, "🔥 TestAlert");
     }
 
     #[test]
@@ -692,7 +692,7 @@ mod tests {
         let msg = alert_with_incident_to_markdown(&awi, &make_config("https://incidents.example.com"));
         assert_eq!(
             msg,
-            "TestAlert [View alert](https://incidents.example.com/alerts/feed?alertPayloadFingerprint=abc123def456)"
+            "🔥 TestAlert [View alert](https://incidents.example.com/alerts/feed?alertPayloadFingerprint=abc123def456)"
         );
     }
 
