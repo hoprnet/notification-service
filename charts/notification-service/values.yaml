@@ -59,6 +59,23 @@ service:
   # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
   port: 8080
 
+# NetworkPolicy — disabled by default. ingressFrom is a list of allowed peers, each a
+# namespace plus the pod labels to match within it - set per consumer, since callers
+# (and their label schemes) vary.
+networkPolicy:
+  enabled: false
+  ingressFrom: []
+  # ingressFrom:
+  #   - namespace: keep
+  #     podSelector:
+  #       app.kubernetes.io/name: keep
+  #       app.kubernetes.io/instance: keep
+  #       keep-component: backend
+  #   - namespace: keep
+  #     podSelector:
+  #       app.kubernetes.io/name: keep-daily-reminder
+  #       app.kubernetes.io/instance: keep-daily-reminder
+
 # Ingress — disabled by default; enable and configure for your cluster's ingress controller.
 # https://kubernetes.io/docs/concepts/services-networking/ingress/
 ingress:
