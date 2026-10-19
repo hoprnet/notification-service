@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, Datelike, NaiveDateTime, Utc};
 
 use crate::{config::Config, models::{Alert, AlertWithIncident, Incident, Reminder}};
 
@@ -345,6 +345,11 @@ fn build_graylog_url(alert: &Alert, config: &Config) -> Option<String> {
 /// Try to parse a datetime string in several formats used across Keep/Prometheus
 /// payloads. Returns `None` if no format matches.
 fn parse_datetime(s: &str) -> Option<DateTime<Utc>> {
+    parse_datetime_raw(s).filter(|dt| dt.year() > 1)
+}
+
+/// Format-matching half of [`parse_datetime`], without the zero-time filter.
+fn parse_datetime_raw(s: &str) -> Option<DateTime<Utc>> {
     // "2026-05-26 09:06:25.383000"  (space separator, microseconds)
     if let Ok(naive) = NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f") {
         return Some(naive.and_utc());
@@ -650,6 +655,16 @@ mod tests {
     fn correlated_alert_hidden_when_absent() {
         let msg = to_markdown(&make_alert("firing", "warning"), &make_config("https://incidents.example.com"));
         assert!(!msg.contains("Correlated alerts"));
+    }
+
+    #[test]
+    fn zero_ends_at_not_shown() {
+        // Go's zero time, sent by Keep/Alertmanager when the alert has not ended.
+        let mut alert = make_alert("firing", "warning");
+        alert.ends_at = Some("0001-01-01T00:00:00.000Z".into());
+        let msg = to_markdown(&alert, &make_config(""));
+        assert!(!msg.contains("End time"));
+        assert!(msg.contains("Start time"));
     }
 
     #[test]
