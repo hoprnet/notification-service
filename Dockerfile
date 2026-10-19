@@ -32,7 +32,7 @@ WORKDIR /app
 
 # tini: proper PID-1 / signal forwarding.
 # ca-certificates: needed for outbound TLS connections (e.g. future Zulip integration).
-RUN apk add --no-cache tini ca-certificates
+RUN apk upgrade --no-cache && apk add --no-cache tini ca-certificates
 
 # Run as a non-root user.
 RUN addgroup -S app && adduser -S app -G app
