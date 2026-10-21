@@ -1,6 +1,7 @@
 use std::fmt::Write;
 
 use chrono::{DateTime, Datelike, NaiveDateTime, Utc};
+use chrono_tz::Europe::Berlin;
 
 use crate::{config::Config, models::{Alert, AlertWithIncident, Incident, Reminder}};
 
@@ -21,8 +22,8 @@ use crate::{config::Config, models::{Alert, AlertWithIncident, Incident, Reminde
 /// - **Reason:** `…`                       ← only shown when present
 /// - **Pod:** `…`
 /// - **Container:** `…`
-/// - **Start time:** `…`              ← UTC ISO 8601
-/// - **End time:** `…`                ← only shown when present, UTC ISO 8601
+/// - **Start time:** `…`              ← European local time (CET/CEST)
+/// - **End time:** `…`                ← only shown when present, European local time
 ///
 /// 🔔 [Keep](…) · 📊 [Prometheus](…)  · 📖 [Runbook](…) ← Keep/Runbook only when present
 /// ```
@@ -125,11 +126,11 @@ pub fn to_markdown(alert: &Alert, config: &Config) -> String {
         writeln!(out, "- **Correlated alerts:** [{}]({})", parent_name, url).unwrap();
     }
 
-    if let Some(ts) = parse_datetime_to_iso(&alert.effective_started_at()) {
+    if let Some(ts) = parse_datetime_to_local(&alert.effective_started_at()) {
         writeln!(out, "- **Start time:** {}", ts).unwrap();
     }
     if let Some(ref ends_at) = alert.ends_at {
-        if let Some(ts) = parse_datetime_to_iso(ends_at) {
+        if let Some(ts) = parse_datetime_to_local(ends_at) {
             writeln!(out, "- **End time:** {}", ts).unwrap();
         }
     }
@@ -369,6 +370,13 @@ fn parse_datetime_raw(s: &str) -> Option<DateTime<Utc>> {
 /// (`2026-05-26T09:06:25.383Z`). Returns `None` if no format matches.
 fn parse_datetime_to_iso(s: &str) -> Option<String> {
     parse_datetime(s).map(|dt| dt.format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string())
+}
+
+/// Parse a datetime string and render it in European local time (CET in
+/// winter, CEST in summer) as `2026-05-26 11:06:25 CEST`. Returns `None` if no
+/// format matches.
+fn parse_datetime_to_local(s: &str) -> Option<String> {
+    parse_datetime(s).map(|dt| dt.with_timezone(&Berlin).format("%Y-%m-%d %H:%M:%S %Z").to_string())
 }
 
 /// Number of whole days elapsed between `s` and now. Returns `None` if `s`
@@ -665,6 +673,24 @@ mod tests {
         let msg = to_markdown(&alert, &make_config(""));
         assert!(!msg.contains("End time"));
         assert!(msg.contains("Start time"));
+    }
+
+    #[test]
+    fn times_shown_in_european_summer_time() {
+        let mut alert = make_alert("firing", "warning");
+        alert.started_at = Some("2026-07-01 10:00:00".into());
+        alert.ends_at = Some("2026-07-01T12:30:00Z".into());
+        let msg = to_markdown(&alert, &make_config(""));
+        assert!(msg.contains("- **Start time:** 2026-07-01 12:00:00 CEST"));
+        assert!(msg.contains("- **End time:** 2026-07-01 14:30:00 CEST"));
+    }
+
+    #[test]
+    fn times_shown_in_european_winter_time() {
+        // make_alert: started 2026-01-01 00:00:00 UTC, ends 02:00:00Z
+        let msg = to_markdown(&make_alert("firing", "warning"), &make_config(""));
+        assert!(msg.contains("- **Start time:** 2026-01-01 01:00:00 CET"));
+        assert!(msg.contains("- **End time:** 2026-01-01 03:00:00 CET"));
     }
 
     #[test]
