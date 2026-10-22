@@ -44,7 +44,7 @@
             clippy
             rustfmt
             just
-            helm
+            kubernetes-helm
             docker
           ];
 
