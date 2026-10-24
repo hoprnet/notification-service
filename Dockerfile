@@ -24,7 +24,7 @@ RUN touch src/main.rs && cargo build --release
 
 # ── Runtime stage ─────────────────────────────────────────────────────────────
 # Minimal Alpine image — no Rust toolchain, no build artifacts.
-FROM alpine:3.21
+FROM alpine:3.24
 
 LABEL description="Hopr Notification Service"
 
