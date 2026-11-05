@@ -21,7 +21,7 @@ permissions:
 jobs:
   build-docker:
     name: Docker
-    uses: hoprnet/hopr-workflows/.github/workflows/build-docker.yaml@build-docker-v3.1.3
+    uses: hoprnet/hopr-workflows/.github/workflows/build-docker.yaml@45221eb1aadfc5c46751306c5c7d6d291c8a24b3 # build-docker-v3.1.3
     permissions:
       contents: read
       pull-requests: write
@@ -49,7 +49,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
@@ -58,3 +58,22 @@ jobs:
 
       - name: Render Helm chart (dry-run)
         run: helm template notification-service charts/notification-service
+
+  # Single required check for the branch ruleset: green only when every other
+  # job in this run succeeded, so adding, renaming, or removing a job never
+  # needs a ruleset change. `if: always()` runs it even when a dependency
+  # fails; alls-green then reds the gate on any failure or disallowed skip.
+  # No job here may skip, so allowed-skips is empty.
+  merge-gate:
+    name: Merge gate
+    if: always()
+    needs:
+      - build-docker
+      - build-helm
+    runs-on: depot-ubuntu-24.04
+    permissions: {}
+    steps:
+      - name: Require all jobs pass
+        uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # v1.3.0
+        with:
+          jobs: ${{ toJSON(needs) }}
