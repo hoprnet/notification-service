@@ -59,11 +59,11 @@ jobs:
       - name: Render Helm chart (dry-run)
         run: helm template notification-service charts/notification-service
 
-  # Single required check for the branch ruleset: green only when every other
-  # job in this run succeeded, so adding, renaming, or removing a job never
-  # needs a ruleset change. `if: always()` runs it even when a dependency
-  # fails; alls-green then reds the gate on any failure or disallowed skip.
-  # No job here may skip, so allowed-skips is empty.
+  # Single aggregate merge gate: succeeds only if every job listed in `needs`
+  # succeeded. Add each new job to `needs`; a job missing there cannot fail
+  # the gate, and `if: always()` does not discover unlisted jobs. Mark THIS
+  # one as the required check in the branch ruleset. No job here may skip, so
+  # allowed-skips is empty.
   merge-gate:
     name: Merge gate
     if: always()
