@@ -21,7 +21,7 @@ permissions:
 jobs:
   build-docker:
     name: Docker
-    uses: hoprnet/hopr-workflows/.github/workflows/build-docker.yaml@45221eb1aadfc5c46751306c5c7d6d291c8a24b3 # build-docker-v3.1.3
+    uses: hoprnet/hopr-workflows/.github/workflows/build-docker.yaml@5be6fbca6ea8b13afa4d111724ff83c78456d13e # build-docker-v3.4.3
     permissions:
       contents: read
       pull-requests: write
