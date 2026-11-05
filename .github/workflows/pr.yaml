@@ -12,7 +12,7 @@ on:
       - reopened
       - ready_for_review
 concurrency:
-  group: ${{ github.event.pull_request.head.ref || github.ref_name }}-pr
+  group: ${{ github.event.pull_request.number || github.ref }}-pr
   cancel-in-progress: true
 
 permissions:
