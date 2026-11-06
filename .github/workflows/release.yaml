@@ -70,7 +70,7 @@ jobs:
 
       - name: Setup GCP
         id: gcp
-        uses: hoprnet/hopr-workflows/actions/setup-gcp@45221eb1aadfc5c46751306c5c7d6d291c8a24b3
+        uses: hoprnet/hopr-workflows/actions/setup-gcp@483557b623d1b9d0613506c467e8f124841df778
         with:
           login_artifact_registry: 'true'
           install_sdk: 'true'
