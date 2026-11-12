@@ -1,0 +1,52 @@
+name: Fork checkout test
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  context:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print context (no secrets)
+        env:
+          GH_REPO: ${{ github.repository }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          echo "event=${EVENT}"
+          echo "github.repository=${GH_REPO}"
+          echo "head.repo=${HEAD_REPO}"
+          echo "head.ref=${HEAD_REF}"
+          echo "head.sha=${HEAD_SHA}"
+  by-ref:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout by head.ref (branch name)
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.ref }}
+      - name: Show what was checked out
+        run: |
+          git remote get-url origin
+          git rev-parse HEAD
+          git log -1 --format='%H %an %s'
+  by-sha:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout by head.sha
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Show what was checked out
+        env:
+          EXPECTED: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git remote get-url origin
+          git rev-parse HEAD
+          git log -1 --format='%H %an %s'
+          test "$(git rev-parse HEAD)" = "${EXPECTED}" && echo "MATCH: checked out the PR head commit"
