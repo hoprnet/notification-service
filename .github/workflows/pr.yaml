@@ -28,7 +28,7 @@ jobs:
       pull-requests: write
       id-token: write
     with:
-      source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
+      source_branch: ${{ github.event.pull_request.head.sha || github.sha }}
       version_type: commit
       concurrency_group_suffix: ${{ github.event.pull_request.number || github.ref_name }}
       build_matrix: >-
